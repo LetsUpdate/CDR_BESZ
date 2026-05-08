@@ -1,0 +1,84 @@
+% !TEX root = ../main.tex
+
+A jelen fejezet a dolgozat empirikus részének alapját képező \textbf{YJMob100K} \cite{yabe2023metropolitan} adathalmazt mutatja be: az adatfelvétel körülményeit, a sémát, a két részadatkészlet közötti kapcsolatot, valamint a kísérő POI-fájlok szerepét. Az általános, kutatási célú CDR-adatkészletekre vonatkozó módszertani áttekintést a 3.7.\ szakasz tartalmazza.
+
+\subsection{Az YJMob100K adatkészlet áttekintése}
+
+Az YJMob100K adatkészletet Yabe és munkatársai \cite{yabe2023metropolitan} tették közzé 2023-ban a \emph{Scientific Data} folyóiratban, a HuMob Challenge mobilitás-előrejelzési verseny adatforrásaként. Az adatok a Yahoo Japan~Corporation \emph{Yahoo!~MAP} alkalmazásából származnak: anonimizált felhasználók eszközpozícióit rögzítik 30~perces időfelbontással, 75~napon át, egy 200$\times$200-as rácshálóra diszkretizálva. A megfigyelési terület közvetlenül nem nyilvános, ám térbeli sablonillesztéssel egyértelműen Nagoya nagyvárosi régiójához (Aichi prefektúra, Japán) köthető \cite{pinter2024revealing}.
+
+Az adathalmaz Creative~Commons~BY 4.0 licenc alatt érhető el a Zenodo platformon\footnote{\url{https://zenodo.org/records/14219563}}. A dolgozat a \texttt{v3} adatverziót használja.
+
+\begin{table}[H]
+\centering
+\caption{Az YJMob100K adatkészlet kulcsparaméterei.}
+\label{tab:yjmob_summary}
+\begin{tabular}{l l}
+\hline
+\textbf{Tulajdonság} & \textbf{Érték} \\
+\hline
+Forrás                  & Yahoo!~MAP, Yahoo Japan Corporation \\
+Hivatkozás              & Yabe et al.\ \cite{yabe2023metropolitan} \\
+Megfigyelési terület    & Nagoya, Aichi prefektúra, Japán \\
+Időtartam               & 75~nap \\
+Időfelbontás            & 30~perc (48~időrés/nap) \\
+Térbeli felbontás       & 200$\times$200 cellás rács \\
+Cellaméret (becsült)    & $\approx 455$~m (K--Ny) $\times \approx 556$~m (É--D) \\
+Teljes kiterjedés       & $\approx 91$~km $\times \approx 111$~km \\
+Felhasználók (dataset1) & 100~000 \\
+Felhasználók (dataset2) & 25~000 (független kohorsz) \\
+Rekordok (dataset1)     & 111\,535\,175 \\
+Rekordok (dataset2)     &  29\,389\,749 \\
+Összes rekord           & 140\,924\,924 \\
+Licenc                  & CC~BY~4.0 \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsection{Adatszerkezet}
+
+Az alapadatfájlok (\texttt{yjmob100k-dataset1.csv}, \texttt{yjmob100k-dataset2.csv}) szerkezete azonos: minden sor egyetlen pingelési eseményt rögzít az alábbi öt mezővel:
+
+\begin{itemize}
+    \item \texttt{uid} -- pszeudoanonimizált felhasználói azonosító (egész szám);
+    \item \texttt{d} -- a megfigyelés napja, $0 \le d \le 74$;
+    \item \texttt{t} -- a 30~perces időrés indexe a napon belül, $0 \le t \le 47$;
+    \item \texttt{x}, \texttt{y} -- rácskoordináták, $1 \le x, y \le 200$.
+\end{itemize}
+
+Fontos sajátosság, hogy az $x$ tengely a north--south (\textit{northing}) iránynak, az $y$ tengely az east--west (\textit{easting}) iránynak felel meg. Ez ellentétes a Descartes-koordináták szokásos $(x, y) = (\text{easting, northing})$ konvenciójával, és a feldolgozó kód minden ponton explicit módon kezeli (lásd 7.\ és 8.\ fejezet). Az adatfelvétel sem napszakot, sem dátumot nem rögzít közvetlenül; a hét napjainak ($d$~modulo~7) megfeleltetését empirikusan, az aktivitásmintázat heti periodicitásából vezettük le (lásd 9.7.\ szakasz).
+
+\subsection{A két részadatkészlet közötti kapcsolat}
+\label{subsec:two_datasets}
+
+A Zenodo-adatközlés (v3) szerint a két fájl \emph{két diszjunkt felhasználói kohorszot} ír le ugyanazon a 75~napos időablakon és rácsterületen: a \texttt{dataset1} egy üzleti szokásrend szerinti („business-as-usual") populációt (100\,000~fő), a \texttt{dataset2} pedig egy ettől független, kisebb populációt (25\,000~fő) tartalmaz, amelynek utolsó 15~napját (\(d=60\ldots74\)) egy nem dokumentált kollektív viselkedési zavar (\enquote{vészhelyzet}) érinti.
+
+Fontos figyelmeztetés: az \texttt{uid} mező mindkét fájlban 0-tól indul és \emph{kizárólag a saját fájljára érvényes} -- közös személyazonosítóként nem használható. A numerikus értékkészletek átfedése (\texttt{dataset2}: $0\ldots24\,999$ \(\subset\) \texttt{dataset1}: $0\ldots99\,999$) önmagában nem jelent személyazonosság-egyezést. Ezt empirikusan is ellenőriztük: a két fájl azonos \texttt{uid}-jeihez detektált otthoni cellák közül mindössze 2 esett egybe (a 23\,953 közös azonosítóból), az átlagos rácstávolságuk pedig $\approx 75$ cella ($\approx 38$~km), ami a véletlen-baseline ($\approx 104$ cella) közelében van. Ha a két fájl ugyanazokat a személyeket írná le, a home-cellák túlnyomó többségének egybe kéne esnie a tartózkodási hely napról-napra való stabilitása miatt.
+
+Ennek a szerkezetnek két következménye van a dolgozat módszertanára nézve:
+\begin{enumerate}
+    \item A vészhelyzet hatását \emph{populációszintű} (between-subject) összehasonlítással vizsgáljuk: a \texttt{dataset1} szolgál baseline-ként, a \texttt{dataset2} pedig a kezelt csoportként (lásd 7.4.\ és 9.5.\ szakasz).
+    \item Az anomáliadetekciós modellt a \texttt{dataset1} normál mintáján tanítjuk, és a \texttt{dataset2} vészhelyzeti időszakára alkalmazzuk; mivel a két kohorsz független, az általánosíthatósághoz a populációs heterogenitást kontrollálni kell (lásd 7.4.\ szakasz).
+\end{enumerate}
+
+\subsection{Kísérő POI-fájlok}
+
+Az adathalmaz két, helyszín-szemantikai kontextust biztosító melléktáblát is tartalmaz:
+\begin{itemize}
+    \item \texttt{cell\_POIcat.csv} (221\,000~sor) -- minden rácscellához megadja, hogy az egyes POI-kategóriákból (\textit{Point of Interest}) hány darab található a területén. A tábla séma: \texttt{(x, y, category, POI\_count)}.
+    \item \texttt{POI\_datacategories.csv} (85~sor) -- a POI-kategóriák azonosítóinak feloldása emberi olvasású megnevezésekre (pl.\ \emph{Bakery}, \emph{Hospital}, \emph{Transit Station}, \emph{Heavy Industry}).
+\end{itemize}
+
+A 85 finomszemcsés POI-kategóriát a \texttt{schema.py} 9 magasabb szintű \textbf{zónába} (\textit{food, shopping, leisure, transit, parking, healthcare, education, services, industry}) sorolja össze, amely táblát a \texttt{dim\_cell} dimenzió-tábla \texttt{poi\_zone} oszlopa tartalmazza. A teljes leképezés a \emph{Függelék}~A.1.\ alatt található.
+
+\subsection{Adatminőségi és értelmezési megfontolások}
+
+Az YJMob100K, mint minden anonimizált, szemcsésített CDR-jellegű adathalmaz, a 3.7.\ szakaszban felsorolt általános korlátokon túl néhány specifikus megfontolást is igényel:
+
+\begin{itemize}
+    \item \textbf{Reprezentativitás:} Az adatok kizárólag a Yahoo!~MAP felhasználói közül kerültek mintavételezésre, így a teljes nagoyai népességet csak részben fedik le; a felhasználói korösszetétel valószínűleg a fiatalabb, technológiailag aktív rétegek felé tolódik el.
+    \item \textbf{Térbeli felbontás:} A névleges 500~m-es rácsméret-hivatkozás megtévesztő; a tényleges cellaméretek aszimmetrikusak ($\approx 454{,}5 \times 555{,}6$~m, lásd 8.1.\ szakasz), és ennek figyelmen kívül hagyása szisztematikus torzítást okoz a távolság- és területalapú mutatókban.
+    \item \textbf{Időbeli horgonyzás hiánya:} Mivel a kezdő dátum nincs nyilvánosságra hozva, az adatok időbeli interpretációja (pl.\ ünnepnapok, évszakhatások) közvetlenül nem lehetséges; csak a relatív heti és napi mintázatok elemezhetők.
+    \item \textbf{Esemény-jellegű hiányosság:} A \enquote{vészhelyzeti} időszak típusa rejtett, így az anomáliadetekció eredményei csak strukturálisan értelmezhetők, az adott esemény természetétől függetlenül.
+\end{itemize}
+
+A felsorolt korlátok ellenére az YJMob100K az egyik legnagyobb, nyíltan elérhető nagyvárosi mobilitási adatkészlet, amelynek mérete (141~M rekord) és időbeli mélysége (75~nap) a CDR-szakirodalomban szokásosnál is részletesebb elemzéseket tesz lehetővé.

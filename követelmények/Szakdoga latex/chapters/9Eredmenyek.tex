@@ -1,0 +1,244 @@
+% !TEX root = ../main.tex
+
+A jelen fejezet a megvalósított rendszer által kiszámított mobilitási metrikák statisztikai jellemzőit, a napi aktivitásmintázatokat, az ingázási távolságok eloszlását és az anomáliadetekció eredményeit mutatja be. A bemutatott számadatok mind a tényleges DuckDB-adatbázisból és a Parquet-fájlokból lekérdezett értékek.
+
+\subsection{Mobilitási metrikák eloszlása}
+
+A \autoref{fig:impl01} ábra a négy fő metrika eloszlását ábrázolja a dataset1-en (normál viselkedés). A gyrációs sugár és a home--work távolság erősen jobbra aszimmetrikus: a medián értékek lényegesen alacsonyabbak az átlagnál, ami hosszú farkú eloszlásra utal --- összhangban a González et al.\ \cite{gonzalez2008understanding} által leírt vágott hatványfüggvény-modellel, amelyet a szerzők szintén CDR adatokon igazoltak.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{img/impl_01_feature_distributions.png}
+\caption{A négy mobilitási jellemző eloszlása a dataset1 normál időszakán. Saját számítás.}
+\label{fig:impl01}
+\end{figure}
+
+Az alábbi táblázat (\autoref{tab:descriptives}) foglalja össze a kiszámított leíró statisztikákat:
+
+\begin{table}[H]
+\centering
+\caption{A mobilitási jellemzők leíró statisztikái (dataset1, normál időszak).}
+\label{tab:descriptives}
+\begin{tabular}{l r r}
+\hline
+\textbf{Jellemző} & \textbf{Medián} & \textbf{Átlag} \\
+\hline
+Gyrációs sugár (m)           & 3~435  & 5~491  \\
+Home--work távolság (m)      & 3~589  & 8~645  \\
+Helydiverzitás (cella/nap)   & 8      & 8{,}84 \\
+Shannon-entrópia (bit)       & --     & 2{,}66 \\
+\hline
+\end{tabular}
+\end{table}
+
+A felhasználók 27{,}8\%-a napi 10~km-nél nagyobb otthon--munkahely távolságot tesz meg --- ez az arány a japán nagyváros-környéki ingázási szokásoknak megfelelő értéket mutat.
+
+\subsection{POI-zónák aktivitása}
+
+A \autoref{fig:impl02} ábra a cellánkénti aktivitás megoszlását mutatja POI-zóna és időszak szerint. A legtöbb aktív cella a \textit{services} (8~664), az \textit{industry} (4~386) és a \textit{leisure} (1~730) zónákba esik. A vészhelyzeti időszakban a szabadidős zónájú cellák aktivitása csökkent a legjobban, míg az ipari zónában szinte nem változott a mozgásszám --- ez összhangban van azzal a várakozással, hogy az ipari telephelyek üzemeltetése a korlátozások alatt is folytatódott.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.90\textwidth]{img/impl_02_poi_by_period_type.png}
+\caption{Aktivitás POI-zónák szerint, alap- és vészhelyzeti időszakban összehasonlítva. Saját számítás.}
+\label{fig:impl02}
+\end{figure}
+
+\subsection{Napi aktivitásmintázat}
+
+A \autoref{fig:impl03} ábra az összes felhasználóra aggregált átlagos napi aktivitást (ping-szám per 30~perces időrés) ábrázolja. Jól azonosítható a reggeli (06:00--09:00) és esti (17:00--20:00) mozgási csúcs, ami a munkába járás cirkadián ritmusát tükrözi. Ezek az éjszakai minimumot követő reggeli és az esti csúcsok pontosan megfelelnek a Pintér és Felde \cite{pinter2022awakening} által mobilhálózati adatokon leírt cirkadián ritmus jellemzőinek.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.90\textwidth]{img/impl_03_daily_activity.png}
+\caption{Átlagos napi aktivitás 30~perces időrésekre bontva. Saját számítás.}
+\label{fig:impl03}
+\end{figure}
+
+\subsection{Ingázási távolság megoszlása}
+
+A \autoref{fig:impl04} ábra az otthon--munkahely euklideszi távolság hisztogramját mutatja. A legtöbb felhasználó 1--5~km körzetben ingázik; a hosszú farkú eloszlás 10~km felett ritkuló, de tartósan jelen lévő hosszú ingázókat is tartalmaz. Megjegyzendő, hogy az itt számított otthon- és munkahely-pozíciók a ~455~m × ~556~m cellaméretnek megfelelő felbontással állnak rendelkezésre, ami a rövid ingázási távolságok pontosságát korlátozza.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.90\textwidth]{img/impl_04_commute_dist.png}
+\caption{Otthon--munkahely távolság megoszlása a dataset1 felhasználóin. Saját számítás.}
+\label{fig:impl04}
+\end{figure}
+
+\subsection{Anomáliadetekció eredményei}
+
+\subsubsection{Napi anomáliaráta idősora}
+
+A \autoref{fig:impl05} ábra a napi anomáliaráta idősorát ábrázolja a dataset2-n. Az alap-időszakban ($d < 60$) az anomáliaráta stabilan 7{,}0\% körül alakul. A vészhelyzeti időszakban ($d \geq 60$) a ráta 5{,}0\%-ra csökken.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.90\textwidth]{img/impl_05_anomaly_daily_rate.png}
+\caption{Napi anomáliaráta idősora a dataset2-n (alap- és vészhelyzeti szakasz). Saját számítás.}
+\label{fig:impl05}
+\end{figure}
+
+Az eredmény látszólag ellentmondásos: a vészhelyzeti időszakban kevesebb anomáliát mértünk, holott éppen ekkor várnánk a rendellenes viselkedés arányának növekedését. A magyarázat kettős. Egyrészt az alap-szakaszon mért 7\% nem ellentmond a tanító 5\%-os \texttt{contamination} paraméternek, hanem out-of-sample szóródás: a döntési küszöböt a dataset1-en kalibráltuk, így egy másik populáción más arány eshet alá. Másrészt a vészhelyzetben a mozgások kollektíven beszűkültek és egyöntetűbbé váltak, ezért az Isolation Forest --- amely a tipikus viselkedéstől való távolságot méri --- kevesebb mintát minősített szélsőségesnek. Aki mégis rendellenes maradt, az viszont annál kiugróbb értékeket mutatott, amint az a következő részben látszik.
+
+\subsubsection{Anomális és normális felhasználók összehasonlítása}
+
+A \autoref{fig:impl06} ábra a vészhelyzeti időszak anomális és normális felhasználóinak mobilitási jellemzőit veti össze boxplot-diagramokon. Az anomális felhasználók minden vizsgált dimenzióban szélsőséges értékeket mutatnak (\autoref{tab:anomaly_comparison}):
+
+\begin{table}[H]
+\centering
+\caption{Anomális és normális felhasználók mobilitási jellemzőinek mediánjai a vészhelyzeti időszakban.}
+\label{tab:anomaly_comparison}
+\begin{tabular}{l r r r}
+\hline
+\textbf{Jellemző} & \textbf{Anomális} & \textbf{Normális} & \textbf{Arány} \\
+\hline
+Gyrációs sugár (m)         & 16~900 & 3~736  & 4{,}52× \\
+Home--work távolság (m)    & 36~459 & 3~320  & 10{,}98× \\
+Helydiverzitás (cella/nap) & 14     & 8      & 1{,}75× \\
+\hline
+\end{tabular}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.90\textwidth]{img/impl_06_anomaly_feature_comparison.png}
+\caption{Anomális és normális felhasználók jellemzőinek összehasonlítása boxplot-diagramokon, a vészhelyzeti időszakban. Saját számítás.}
+\label{fig:impl06}
+\end{figure}
+
+A gyrációs sugár 4{,}52-szeres és a home--work távolság közel 11-szeres különbsége arra utal, hogy az anomális felhasználók lényegesen nagyobb területet jártak be a vészhelyzet alatt is --- vélhetően olyan egyének, akik nem tudtak otthon maradni, és hosszú, szokásostól eltérő útvonalakat tettek meg. Ez az eredmény összhangban áll Traag et al.\ \cite{traag2011social} esemény-detektálási megfigyeléseivel, miszerint rendkívüli helyzetekben a mobilhálózati adatban is mérhető szélsőséges mobilitás-növekedés figyelhető meg egy kisebb felhasználói csoportnál.
+
+\subsection{Cirkadián ritmus és az "ébredő város" reprodukciója}
+\label{subsec:circadian}
+
+A Pintér és Felde \cite{pinter2022awakening} által Budapest mobilhálózati adatain bemutatott "ébredő város" jelenség --- vagyis a városi aktivitás reggeli felfutásának időzítése --- reprodukálható a YJMob100K adathalmazon is. A \autoref{fig:circ01} ábra a 30~perces időrésekre aggregált átlagos aktivitást ábrázolja a normál (dataset1) és a vészhelyzeti (dataset2, $d \geq 60$) időszakra.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{img/circ_01_circadian_comparison.png}
+\caption{Aggregált napi aktivitás-görbe normál és vészhelyzeti időszakra. Saját számítás.}
+\label{fig:circ01}
+\end{figure}
+
+Az "ébredési idő" formálisan az a $t_{\mathrm{wake}}$ időpont, amelynél az aggregált aktivitás (ping/felhasználó/nap) felfelé tartva először eléri az éjszakai alapérték és a nappali plató közötti 50\,\%-os küszöböt:
+\[
+t_{\mathrm{wake}} = \min\bigl\{\, t \,\bigm|\, a(t) \geq a_{\mathrm{night}} + 0{,}5 \cdot (a_{\mathrm{plat}} - a_{\mathrm{night}}) \,\bigr\},
+\]
+ahol $a_{\mathrm{night}}$ a 00:00--05:00 közötti, $a_{\mathrm{plat}}$ pedig a 08:00--18:00 közötti átlagos aktivitás. A pontos $t_{\mathrm{wake}}$ értékhez a két szomszédos időrés között lineáris interpolációt alkalmazunk. Ezzel a definícióval --- amely Pintér és Felde \cite{pinter2022awakening} módszertanát követi --- a normál időszakban $t_{\mathrm{wake}} = 6{,}38$~óra (kb.\ 06:23), a vészhelyzet előtti dataset2 alapidőszakban 6{,}25~óra, a vészhelyzet alatt pedig 6{,}14~óra (kb.\ 06:08; lásd \autoref{fig:circ02}). A vészhelyzet tehát mintegy 9--14~perccel előrébb tolta a kollektív ébredést, miközben az éjszakai (00:00--05:00) aktivitás 53{,}0\%-kal nőtt, a nappali plató szintje viszont csak 1{,}8\%-kal csökkent. Ez az aszimmetria jól illeszkedik Pintér és Felde \cite{pinter2022awakening} azon megfigyeléséhez, hogy a rendkívüli helyzetek nem feltétlenül a teljes aktivitást, hanem inkább annak időzítését és összetételét változtatják meg.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\textwidth]{img/circ_02_morning_peak_shift.png}
+\caption{Az ébredési idő (50\%-os küszöbátlépés) eltolódása normál és vészhelyzeti időszak között. Saját számítás.}
+\label{fig:circ02}
+\end{figure}
+
+\subsection{Felhasználói archetípusok K-Means klaszterezéssel}
+\label{subsec:archetypes}
+
+A Pintér \cite{pinter2020artificial} disszertációjában leírt \emph{Anchorite}, \emph{Commuter}, \emph{Explorer} és \emph{Nomad} mobilitási archetípusok --- amelyeket a szerző mesterséges intelligencia alapú szegmentálással azonosított --- reprodukálhatók a YJMob100K adatokon is. Mind a 100~000 dataset1-beli felhasználóra K-Means algoritmust ($k=4$, \texttt{random\_state}=42) futtattunk három, naponkénti átlaggal aggregált, log-transzformált és skálázott jellemzőn: gyrációs sugár, Shannon-entrópia és otthon--munkahely távolság. A $k=4$ választása a hivatkozott négy archetípus reprodukcióját célozta meg, ezért nem végeztünk független klaszterszám-keresést (elbow vagy sziluett-analízist).
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{img/seg_01_cluster_scatter.png}
+\caption{A négy klaszter elhelyezkedése a (gyrációs sugár, home--work távolság) síkon. Saját számítás.}
+\label{fig:seg01}
+\end{figure}
+
+A \autoref{tab:archetypes} foglalja össze a kapott négy klaszter jellemzőit. A klaszterek interpretációja:
+\begin{itemize}
+\item \textbf{Anchorite} (15{,}3\%) --- alacsony gyrációs sugar ($\approx$1{,}86~km), kis home--work távolság, valószínűleg helyhez kötött nyugdíjasok vagy otthon dolgozók.
+\item \textbf{Commuter} (45{,}0\%) --- közepes gyrációs sugar ($\approx$3{,}89~km), tipikus 5{,}5~km-es home--work távolsággal: a klasszikus városi ingázók.
+\item \textbf{Explorer} (4{,}2\%) --- közepes gyrációs sugar, de hiányzó munkahely-cella ($\mathrm{work}\_x = \mathrm{NULL}$, így a home--work távolság számításkor 0-ra esik): a munkaidős időablakban ($t = 16\dots28$) nincs domináns cella, atipikus napi ritmus, esetleg részmunkaidős vagy szabadúszó felhasználók. Ez a csoport tehát legalább annyira adatminőségi (illetve mintavételezési) elkülönülést jelent, mint valódi viselkedési különbséget.
+\item \textbf{Nomad} (35{,}5\%) --- magas gyrációs sugar ($\approx$8{,}17~km) és nagy home--work távolság ($\approx$14{,}40~km): nagy területet bejáró felhasználók (távingázók, sokat utazók).
+\end{itemize}
+
+\begin{table}[H]
+\centering
+\caption{A K-Means klaszterezés eredményei (dataset1, $k=4$, $n=100\,000$ felhasználó). Mediánok, a \texttt{10-user-segments.ipynb} újrafuttatásából.}
+\label{tab:archetypes}
+\begin{tabular}{l r r r r r}
+\hline
+\textbf{Archetípus} & \textbf{N} & \textbf{Részarány} & \textbf{R\textsubscript{g} (m)} & \textbf{H--W (m)} & \textbf{Diverzitás (cella/nap)} \\
+\hline
+Anchorite & 15\,332 & 15{,}3\% &  1\,855 &  1\,861 &  5{,}7 \\
+Commuter  & 45\,025 & 45{,}0\% &  3\,887 &  5\,464 &  7{,}8 \\
+Explorer  &  4\,193 &  4{,}2\% &  4\,256 &      0  &  7{,}9 \\
+Nomad     & 35\,450 & 35{,}5\% &  8\,173 & 14\,395 & 10{,}5 \\
+\hline
+\end{tabular}
+\end{table}
+
+A klaszterek térbeli megoszlását a \autoref{fig:seg02} ábra szemlélteti Nagoya OpenStreetMap alaptérképén. Jól látszik, hogy a Nomad-felhasználók a városi peremkerületekben és a környező vasútvonalak mentén a leggyakoribbak, az Anchorite-ok inkább a sűrűbben lakott belvárosban koncentrálódnak. Ez a térbeli mintázat összhangban van Pintér és Felde \cite{pinter2021evaluating} azon eredményével, miszerint az otthon-munkahely távolság szocioökonómiai gradiensként is értelmezhető.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{img/seg_02_cluster_gis.png}
+\caption{A négy archetípus otthonainak térbeli eloszlása Nagoya OSM-térképen. Saját számítás.}
+\label{fig:seg02}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{img/seg_03_cluster_boxplots.png}
+\caption{A három klaszterező jellemző eloszlása archetípusonként. Saját számítás.}
+\label{fig:seg03}
+\end{figure}
+
+\subsection{Aktivitáskoncentráció és visszatérési ráta a vészhelyzetben}
+\label{subsec:concentration}
+
+A megvalósított rendszer két további, a CDR-szakirodalomban gyakran használt napi metrikát is kiszámít: az \emph{aktivitáskoncentrációt} (a top~3 leglátogatottabb cella részesedése a napi pingek összességéből, AC) és a \emph{visszatérési rátát} (azon napi cellák aránya, amelyek az előző napon is érintettek voltak, RR). E két mutató jellegzetesen érzékeny a viselkedési korlátozásokra: ha a felhasználók kevesebb helyre járnak és gyakrabban térnek vissza ugyanoda, mindkét metrika emelkedik.
+
+\begin{table}[H]
+\centering
+\caption{Aktivitáskoncentráció (AC) és visszatérési ráta (RR) a három időszakban. Saját számítás.}
+\label{tab:ac_rr}
+\begin{tabular}{l r r r r r}
+\hline
+\textbf{Időszak} & \textbf{N (user-nap)} & \textbf{AC átlag} & \textbf{AC medián} & \textbf{RR átlag} & \textbf{RR medián} \\
+\hline
+Normál (ds1, 10\%-os minta) &    706\,228 & 0{,}614 & 0{,}600 & 0{,}307 & 0{,}250 \\
+DS2 alap ($d<60$)           & 1\,386\,430 & 0{,}586 & 0{,}571 & 0{,}297 & 0{,}250 \\
+DS2 vészhelyzet ($d\geq60$) &    365\,247 & 0{,}611 & 0{,}600 & 0{,}311 & 0{,}250 \\
+\hline
+\end{tabular}
+\end{table}
+
+A \autoref{tab:ac_rr} szerint a vészhelyzeti időszakban az aktivitáskoncentráció átlaga 0{,}586-ról 0{,}611-re (\textbf{+2{,}5~százalékpont}, +4{,}3\%~relatív), a visszatérési ráta átlaga pedig 0{,}297-ről 0{,}311-re (\textbf{+1{,}4~százalékpont}, +4{,}7\%~relatív) emelkedett az alapidőszakhoz képest. Ez a kettős növekedés mennyiségileg is megerősíti az alacsonyabb területi szóródást: a felhasználók kevesebb különböző cellában tartózkodtak, és gyakrabban tértek vissza a már korábban is érintett helyekhez. A növekedés mértéke szerény, de robusztus, és összhangban van a vészhelyzeti mobilitáscsökkenésről szóló szakirodalmi várakozásokkal \cite{rhoads2020measuring, traag2011social}.
+
+\subsection{A heti dimenzió empirikus validálása}
+\label{subsec:dow_validation}
+
+A YJMob100K adathalmaz nem hozza nyilvánosságra a felvétel kezdődátumát, így a hét napjainak (\textit{day-of-week}, DOW) megfeleltetése a $d \in \{0, \dots, 74\}$ napindexhez nem ismert előre. A heti aktivitásmintázatok stabilitása \cite{pinter2022awakening} azonban lehetővé teszi a sorrend empirikus levezetését: a $d \bmod 7$ szerint csoportosított napi pingszámok átlagainak konzisztens minimumát keressük (vasárnap), és maximumát (péntek).
+
+A dataset1 napi pingszámaira ($n=75$ nap) végzett aggregáció (\autoref{tab:dow_validation}) egyértelmű mintázatot mutat: a $d \bmod 7 = 0$ pozíciók (azaz $d = 0, 7, 14, \dots, 70$) konzisztensen a legalacsonyabb átlagos aktivitást adják, míg a $d \bmod 7 = 5$ pozíciók a legmagasabbat. Ennek alapján a teljes pipeline a $d = 0$ napot vasárnapként kezeli, a hétvége-jelző pedig $d \bmod 7 \in \{0, 6\}$.
+
+\begin{table}[H]
+\centering
+\caption{Átlagos napi pingszám $d \bmod 7$ szerint a dataset1-en (saját számítás, \texttt{08-dow-analysis.ipynb}).}
+\label{tab:dow_validation}
+\begin{tabular}{c l r}
+\hline
+\textbf{$d \bmod 7$} & \textbf{Levezetett DOW} & \textbf{Átlag ping/nap (millió)} \\
+\hline
+0 & vasárnap   & 1{,}38 \\
+1 & hétfő      & 1{,}52 \\
+2 & kedd       & 1{,}54 \\
+3 & szerda     & 1{,}55 \\
+4 & csütörtök  & 1{,}56 \\
+5 & péntek     & 1{,}59 \\
+6 & szombat    & 1{,}40 \\
+\hline
+\end{tabular}
+\end{table}
+
+A validáció eredményeként a \texttt{features.py} \texttt{weekend\_flag} oszlopa megbízható szemantikai tartalommal bír. A teljes adatra kiszámolt mediánok alapján a hétköznapi gyrációs sugár magasabb, mint a hétvégi ($\approx$3{,}69~km vs.\ $\approx$3{,}00~km, lásd \autoref{fig:impl07}), ami megfelel a munkanapi ingázásból adódó hosszabb útvonalak és a hétvégi, lakhely körül koncentrálódó mozgás mintázatának.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{img/impl_07_weekday_vs_weekend_rog.png}
+\caption{Hétköznapi és hétvégi napi gyrációs sugár összehasonlítása a dataset1 500\,000 véletlenszerűen mintavételezett (uid, d) pontján. Bal: boxplot logaritmikus skálán; jobb: empirikus eloszlásfüggvény (ECDF). Mediánok: hétköznap 3\,685~m, hétvége 2\,996~m; Mann--Whitney U-teszt $p < 10^{-300}$.}
+\label{fig:impl07}
+\end{figure}

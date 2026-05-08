@@ -1,0 +1,31 @@
+% !TEX root = ../main.tex
+
+\subsection*{A.1. POI-kategória \texorpdfstring{$\to$}{->} zóna leképezés}
+\label{appendix:poi_zone_mapping}
+
+A 6.\ és 7.\ fejezetben tárgyalt \texttt{dim\_cell.poi\_zone} oszlopot a \texttt{schema.py} \texttt{ZONE\_RULES} szabályalapú leképezéssel állítja elő, amely az YJMob100K 85 finomszemcsés POI-kategóriáját 9 magasabb szintű zónába sorolja össze. A teljes leképezés:
+
+\begin{table}[H]
+\centering
+\caption{A 85 POI-kategória 9 zónára való leképezése (\texttt{schema.py} \texttt{ZONE\_RULES}).}
+\label{tab:poi_zone_mapping}
+\small
+\begin{tabular}{l p{0.66\textwidth}}
+\hline
+\textbf{Zóna} & \textbf{POI-kategóriák (azonosító -- megnevezés)} \\
+\hline
+food       & 1 Food; 4 Japanese~restaurant; 5 Western~restaurant; 6 Eat~all~you~can; 7 Chinese~restaurant; 8 Indian~restaurant; 9 Ramen; 10 Curry; 11 BBQ; 12 Hot~pot; 13 Bar; 14 Diner; 15 Creative~cuisine; 16 Organic; 17 Pizza; 18 Café; 19 Tea~Salon; 20 Bakery; 21 Sweets; 22 Wine~Bar; 23 Pub; 24 Disco; 25 Beer~Garden; 26 Fast~Food; 27 Karaoke; 28 Cruising; 29 Theme~Park~Restaurant; 30 Amusement~Restaurant; 31 Other~Restaurants \\[2pt]
+shopping   & 2 Shopping; 32 Glasses; 33 Drug~Store; 34 Electronics; 35 DIY; 36 Convenience~Store; 37 Recycle~Shop; 38 Interior; 39 Sports~Store; 40 Clothes; 41 Grocery; 42 Online~Grocery; 75 Retail~Store \\[2pt]
+leisure    & 3 Entertainment; 43 Sports~Recreation; 44 Game~Arcade; 45 Swimming~Pool; 46 Hotel; 47 Park; 50 Casino; 55 Fishing; 68 Hot~Spring \\[2pt]
+transit    & 48 Transit~Station \\[2pt]
+parking    & 49 Parking~Area \\[2pt]
+healthcare & 51 Hospital; 52 Pharmacy; 53 Chiropractic; 54 Elderly~Care~Home \\[2pt]
+education  & 56 School; 57 Cram~School; 58 Kindergarten \\[2pt]
+services   & 59 Real~Estate; 60 Home~Appliances; 61 Post~Office; 62 Laundry; 63 Driving~School; 64 Wedding~Ceremony; 65 Cemetary; 66 Bank; 67 Vet; 69 Hair~Salon; 70 Lawyer~Office; 71 Recruitment~Office; 72 City~Hall; 73 Community~Center; 74 Church; 76 Accountant~Office; 77 IT~Office; 78 Publisher~Office \\[2pt]
+industry   & 79 Building~Material; 80 Gardening; 81 Heavy~Industry; 82 NPO; 83 Utility~Company; 84 Port; 85 Research~Facility \\[2pt]
+\textit{other} & (egyetlen kategória sem; biztonsági \texttt{ELSE} ág) \\
+\hline
+\end{tabular}
+\end{table}
+
+A leképezés indoklása: a 85 finom kategória statisztikai elemzéshez túl részletes (sok kategóriában csak néhány cella esik), ezért a CDR-szakirodalomban szokásos területhasználati zónákra (\textit{land-use zones}) aggregáljuk. A \texttt{transit} és \texttt{parking} ezért külön zóna, hogy a közlekedési csomópontok aktivitásmintázata izolálható maradjon.

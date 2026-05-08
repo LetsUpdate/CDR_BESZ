@@ -1,0 +1,89 @@
+% !TEX root = ../main.tex
+
+A jelen fejezet az YJMob100K adathalmaz rácskoordinátáinak georeferálását és térképes megjelenítését mutatja be. A vizualizáció OpenStreetMap alaptérképre vetítve, pyproj-alapú koordináta-transzformációval készült.
+
+\subsection{Georeferálási módszertan}
+
+Az YJMob100K adathalmaz nem hozza nyilvánosságra a mérési helyszínt; az adatrekordok koordinátái 1--200 közötti rácsindexek, nem geodéziai koordináták. A rács valós térbeli elhelyezkedéséhez a \textit{reverse-engineering-YJMob100K-grid} projekt \cite{pinter2024revealing} eredményeit alkalmaztuk, amely sablonillesztéssel azonosította a megfigyelési területet Nagoya városával (Aichi prefektúra, Japán).
+
+A meghatározott koordináta-rendszer az EPSG:2449 (Japan Plane Rectangular CS~VII), amelynek origója 36°~északi szélesség és 137°~35'~keleti hosszúság. Fontos, hogy az adatkészletben az $x$ tengelyindex az észak--déli (\textit{northing}) irányba növekszik (dél $\rightarrow$ észak), míg az $y$ tengelyindex a kelet--nyugati (\textit{easting}) irányba (nyugat $\rightarrow$ kelet). Ez a konvenció ellentétes a szokásos $(x, y) = (\text{easting, northing})$ rendezéssel, ezért figyelmes kezelése szükséges a georeferálás során.
+
+Ellentétben a névleges 500~m-es rácsmérethivatkozással, a cellák nem négyzetesek: az easting irányú méret $5000 / 11 \approx 454{,}5$~m, a northing irányú méret $5000 / 9 \approx 555{,}6$~m. Ez az aszimmetria szisztematikus torzítást okozna a gyrációs sugár és a home--work távolság számításakor, ha nem vesszük figyelembe -- ezért a \texttt{features.py} mindkét értéket explicit módon alkalmazza (ld.\ 7.\ fejezet).
+
+A rács sarokpontja (az $(1, 1)$ cella bal alsó sarka) EPSG:2449-ben: easting $= {-60\,682}$~m, northing $= {-166\,667}$~m. Az ebből levezetett teljes kiterjedés: $\approx 91$~km (kelet--nyugat) × $\approx 111$~km (észak--dél).
+
+\subsection{Megvalósítás}
+
+A georeferálást a \texttt{geo.py} modul végzi. A pyproj könyvtár \texttt{Transformer} osztálya egyszer inicializálja az EPSG:2449 $\rightarrow$ WGS84 transzformációt, amelyet ezután vektorizáltan alkalmazunk a teljes rácsra:
+
+\begin{lstlisting}[language=Python, caption={Cellaindex WGS84-koordinátává alakítása.}, label={lst:geotransform}, basicstyle=\small\ttfamily, breaklines=true, frame=single]
+from pyproj import Transformer
+_to_wgs84 = Transformer.from_crs(
+    "EPSG:2449", "EPSG:4326", always_xy=True)
+
+def grid_to_lonlat(x, y):
+    easting  = EASTING_MIN  + (y - 0.5) * CELL_WIDTH_M
+    northing = NORTHING_MIN + (x - 0.5) * CELL_HEIGHT_M
+    return _to_wgs84.transform(easting, northing)
+\end{lstlisting}
+
+A \texttt{make\_polygon\_gdf} függvény az összes rácscella poligonját Shapely \texttt{box} objektumként állítja elő, amelyeket GeoPandas GeoDataFrame-be gyűjt. Az alaptérkép megjelenítéséhez szükséges Web Mercator (EPSG:3857) vetületre a \texttt{.to\_crs()} metódus végzi az átváltást, a contextily könyvtár pedig a megfelelő OpenStreetMap csemperéteget tölti le és illeszti a kivetítési körzethez.
+
+\subsection{Térképes vizualizációk}
+
+Az alábbiakban bemutatjuk az öt elkészített GIS térképet.
+
+\subsubsection{Aktivitás-sűrűség térkép}
+
+A \autoref{fig:gis01} ábra a rácscellákon regisztrált ping-ek számát ábrázolja logaritmikus skálán. A belvárosban és a főbb közlekedési csomópontok körzetében sűrűsödő aktivitás jól azonosítható; a periférikus, jellemzően mezőgazdasági vagy erdős területek alacsony aktivitása kirajzolja Nagoya városának körvonalatát.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.90\textwidth]{img/gis_01_activity_map.png}
+\caption{Aktivitás-sűrűség Nagoya rácsán (ping-ek száma cellákon, logaritmikus skála). Saját szerkesztés, OpenStreetMap \copyright~alaptérképen.}
+\label{fig:gis01}
+\end{figure}
+
+\subsubsection{Alap- és vészhelyzeti időszak összehasonlítása}
+
+A \autoref{fig:gis02} ábra cellákon mutatja az aktivitás relatív változását az alapidőszak (dataset1) és a dataset2 vészhelyzeti szakasza ($d \geq 60$) között. A változás mértéke területileg heterogén: a belváros egyes részein csökkenő, az ipari körzetekben stagnáló aktivitás látható.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.90\textwidth]{img/gis_02_baseline_vs_emergency.png}
+\caption{Cellaaktivitás relatív változása az alapidőszakhoz képest a vészhelyzeti szakaszban. Saját szerkesztés.}
+\label{fig:gis02}
+\end{figure}
+
+\subsubsection{POI-zónatérkép}
+
+A \autoref{fig:gis03} ábra az aktív cellákat a domináns POI-zóna szerint színezi. A zónabesorolás a 85 POI-kategóriát 9 összevont típusba sorolja; a szolgáltatási és ipari zónák dominálnak a területet tekintve (8~664 és 4~386 cella), míg a parkolói besorolású cellák száma mindössze 19.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.90\textwidth]{img/gis_03_poi_zones.png}
+\caption{Aktív rácscellákat ábrázoló POI-zónatérkép (9 összevont kategória). Saját szerkesztés.}
+\label{fig:gis03}
+\end{figure}
+
+\subsubsection{Ingázási vonalak térképe}
+
+A \autoref{fig:gis04} ábra az otthon- és munkahely-cellák összekötött vonalpárjait ábrázolja. A sűrű vonalkötegek a főbb ingázási irányokat rajzolják ki; az alacsony átlátszóság (\textit{alpha} = 0{,}05) kiemeli azokat az útvonalakat, amelyeket a legtöbb felhasználó igénybe vesz.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.90\textwidth]{img/gis_04_commute_lines.png}
+\caption{Otthon--munkahely ingázási vonalak térképe. Saját szerkesztés.}
+\label{fig:gis04}
+\end{figure}
+
+\subsubsection{Anomális felhasználók térbeli eloszlása}
+
+A \autoref{fig:gis05} ábra az anomáliadetekció eredményét vetíti térképre: az anomálisnak minősített felhasználó--nap párok aránya cellákon belül, a vészhelyzeti időszakban. Az anomális mozgások jellemzően a város perifériáján és a főbb kijáratoknál sűrűsödnek, ami összhangban van azzal a hipotézissel, hogy az érintett felhasználók szokásos körzetükön kívülre kényszerültek.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.90\textwidth]{img/gis_05_anomaly_map.png}
+\caption{Anomális mozgások térbeli eloszlása a vészhelyzeti időszakban. Saját szerkesztés.}
+\label{fig:gis05}
+\end{figure}

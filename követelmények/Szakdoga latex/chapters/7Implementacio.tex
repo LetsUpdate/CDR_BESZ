@@ -1,0 +1,126 @@
+% !TEX root = ../main.tex
+
+A jelen fejezetben a 6.\ fejezetben megtervezett rendszer tényleges megvalósítását mutatjuk be. A pipeline négy egymásra épülő Python szkriptből áll; mindegyik egy jól körülhatárolt fázist valósít meg, és a projekt gyökérkönyvtárából futtatható.
+
+\subsection{Az adatbetöltési fázis}
+
+Az \texttt{ingest.py} felelős a nyers CSV fájlok DuckDB adatbázisba töltéséért. Az adatbázis-kapcsolat létrehozásakor az elérhető processzormagokhoz (6~mag) és a rendelkezésre álló memóriához (10~GB-os limitet állítunk be) igazítjuk a DuckDB szálkezelését:
+
+\begin{lstlisting}[language=Python, caption={DuckDB kapcsolat konfigurálása.}, label={lst:connect}, basicstyle=\small\ttfamily, breaklines=true, frame=single]
+con = duckdb.connect(str(DB_PATH))
+con.execute("SET threads TO 6")
+con.execute("SET memory_limit = '10GB'")
+\end{lstlisting}
+
+A CSV fájlok betöltése a DuckDB beépített \texttt{read\_csv} függvényével történik, streaming módban: a teljes fájl soha nem kerül egyszerre a memóriába. Az oszlopok explicit típusmegjelölést kapnak (pl.\ \texttt{UINTEGER}, \texttt{UTINYINT}, \texttt{USMALLINT}), ezzel minimalizálva a memóriahasználatot az automatikus típusbecsléshez képest:
+
+\begin{lstlisting}[language=SQL, caption={A \texttt{mobility1} tábla létrehozása streaming CSV-olvasással.}, label={lst:mobility_load}, basicstyle=\small\ttfamily, breaklines=true, frame=single]
+CREATE TABLE mobility1 AS
+SELECT * FROM read_csv(
+    'yjmob100k-dataset1.csv',
+    columns = {
+        'uid': 'UINTEGER',  'd': 'UTINYINT',
+        't':   'UTINYINT',  'x': 'USMALLINT',
+        'y':   'USMALLINT'
+    },
+    header = true
+)
+\end{lstlisting}
+
+A betöltés végén sorszám-validáció ellenőrzi, hogy az elvárt sorok mind bekerültek. Az alábbi táblázat foglalja össze a betöltött táblákat (\autoref{tab:loaded_tables}):
+
+\begin{table}[H]
+\centering
+\caption{A DuckDB adatbázisba betöltött táblák és sorszámaik.}
+\label{tab:loaded_tables}
+\begin{tabular}{l r l}
+\hline
+\textbf{Tábla} & \textbf{Sorok száma} & \textbf{Tartalom} \\
+\hline
+\texttt{mobility1}       & 111~535~175 & Normál időszak (100~000 felhasználó, 75~nap) \\
+\texttt{mobility2}       &  29~389~749 & Vészhelyzeti időszak (25~000 felhasználó, 75~nap) \\
+\texttt{cell\_poi\_cat}  &    221~000  & POI-kategória rácscelláként \\
+\texttt{poi\_categories} &         85 & POI-kategória megnevezések \\
+\hline
+\textbf{Összesen}        & 140~924~924 & \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsection{Mobilitási metrikák számítása}
+
+A \texttt{features.py} CTE-láncolatot (\textit{Common Table Expression}) alkalmaz: minden egyes metrika egy-egy SQL CTE-ben kerül kiszámításra, és a záró \texttt{SELECT} összekapcsolja azokat. Ez az architektúra áttekinthetővé teszi a lekérdezést, és a DuckDB optimalizálója a több logikai lépést egyetlen vektorizált végrehajtási tervvé fordítja le.
+
+A CTE-lánc hat egységből áll:
+
+\begin{enumerate}
+\item \textbf{base}: felhasználónként és naponként kiszámítja az összes ping számát (\texttt{total\_pings}) és a napi centroid koordinátáit ($c_x$, $c_y$).
+\item \textbf{diversity}: az egyedi cellakoordináta-párok száma (\texttt{location\_diversity}). Az egyediséget az $x \cdot 201 + y$ hash-kulccsal azonosítjuk, amely egyértelműen megkülönbözteti a 200×200-as rács összes celláját.
+\item \textbf{entropy}: a Shannon-entrópia kiszámítása $-\sum p_i \log_2 p_i$ képlettel, ahol $p_i$ az $i$-edik cella látogatási valószínűsége.
+\item \textbf{rog}: a gyrációs sugár kiszámítása anizotrop cellaméretekkel (easting: $\approx 454{,}5$~m, northing: $\approx 555{,}6$~m). A két iránybeli eltérő cellaméret figyelembevétele nélkül a sugár torzított lenne:
+
+\begin{lstlisting}[language=SQL, caption={A gyrációs sugár SQL-implementációja anizotrop cellaméretekkel.}, label={lst:rog}, basicstyle=\small\ttfamily, breaklines=true, frame=single]
+SQRT(AVG(
+    POWER((m.x::DOUBLE - b.cx) * 555.556, 2) +
+    POWER((m.y::DOUBLE - b.cy) * 454.545, 2)
+)) AS radius_of_gyration
+\end{lstlisting}
+
+\item \textbf{home}: az éjszakai időrések ($t = 0\ldots11$, azaz 00:00--05:59) leggyakoribb celláját tekintjük otthonnak; az \texttt{ROW\_NUMBER()} ablakfüggvény biztosítja, hogy minden (uid, d) párhoz pontosan egy érték kerüljön ki.
+\item \textbf{work}: a 08:00--14:00 közötti munkaidős időrések ($t = 16\ldots28$) domináns cellája; a home--work távolságot euklideszi képlettel számítjuk a vetületi méterértékekből.
+\end{enumerate}
+
+A számítás eredménye 7{,}1~millió sor (dataset1) és 1{,}8~millió sor (dataset2), amelyeket a rendszer DuckDB táblában és Parquet fájlban is tárol.
+
+\subsection{A csillagséma kialakítása}
+
+A \texttt{schema.py} három dimenzió-táblát hoz létre az adatbázisban.
+
+\textbf{dim\_time} (3~600~sor): a 75~nap × 48~időrés minden kombinációjához tartalmaz metaadatot: az óra számát, a napszakot (\textit{night / morning / afternoon / evening}), a hét napját (\texttt{dow}), az \texttt{is\_weekday} logikai jelzőt, valamint a \texttt{period\_label} oszlopot, amely megkülönbözteti az alap- (\textit{baseline}) és a vészhelyzeti (\textit{emergency}) időszakot. A hét napjának megállapításakor a $d = 0$ értéket vasárnaphoz rendeltük, amit az aktivitásmintázat heti periodicitása alapján vezettünk le.
+
+\textbf{dim\_cell} (20~146~sor): az aktív rácscellákat (legalább egy ping-gel rendelkezőket) tartalmazza a domináns POI-kategóriával és egy összevont zónabesorolással. A 85 POI-kategóriát szabályalapú leképezéssel rendeljük 9 zónához: élelmezés, kereskedelem, szabadidő, közlekedés, parkolás, egészségügy, oktatás, szolgáltatás és ipar. A zónatérkép célja az elemzések értelmezhetőségének javítása.
+
+\textbf{dim\_user} (121\,607~sor): minden \texttt{(uid, dataset)} kombinációhoz tartalmaz egy sort a detektált otthon- és munkahely-cellával, valamint az otthon--munkahely távolsággal. A két adatkészlet független felhasználói kohörsz (lásd 5.3.\ szakasz), így az \texttt{uid} önmagában nem természetes kulcs --- a táblát \((\texttt{uid}, \texttt{dataset})\) kompozit kulcs azonosítja. A 125\,000 felhasználóból (dataset1: 100\,000; dataset2: 25\,000) 121\,607-hez sikerült otthoncellát hozzárendelni; a fennmaradó $\approx 3\,400$ felhasználó nem rendelkezik elegendő éjszakai ($t = 0\ldots11$) ping-aktivitással a stabil otthon-detekcióhoz.
+
+\subsection{Anomáliadetekció}
+
+Az \texttt{anomaly.py} Isolation Forest algoritmust \cite{liu2008isolation} alkalmaz a viselkedési rendellenességek azonosítására. A tanítás a dataset1 összes rekordjára (normál viselkedés) történik, a pontszámozás pedig a dataset2 vészhelyzeti időszakán ($d \geq 60$) fut.
+
+A feature-mátrix öt jellemzőből áll: \texttt{total\_pings}, \texttt{location\_diversity}, \texttt{shannon\_entropy}, \texttt{radius\_of\_gyration} és \texttt{home\_work\_dist\_m}. A StandardScaler normalizálja az értékeket a tanítás előtt, mivel a jellemzők különböző skálákon mozognak (pl.\ ping-szám vs.\ méter).
+
+Az Isolation Forest paraméterei: 200 döntési fa (\texttt{n\_estimators = 200}), konzervatív szennyezettség (\texttt{contamination = 0.05}) és rögzített véletlenszám-mag (\texttt{random\_state = 42}) a reprodukálhatóság érdekében. A modell kimenete az \texttt{anomaly\_scores.parquet} fájlba kerül, amely minden (uid, d) párhoz tartalmazza az anomáliapontszámot és az \texttt{is\_anomaly} logikai jelzőt.
+
+\subsection{Tesztelés, validáció és teljesítménymérés}
+\label{subsec:validation}
+
+A megvalósított pipeline működését két szinten ellenőriztük: (i) sor- és sémaintegritási vizsgálatokkal a betöltés és a csillagséma építése során, valamint (ii) reprezentatív lekérdezések futási idejének mérésével. A felhasználói kohorszok diszjunkt jellegének kvantitatív igazolása (23\,953 közös \texttt{uid}-ből 2 egyező otthoncella) a \autoref{subsec:two_datasets}.\ szakaszban szerepel, ide nem ismételjük meg.
+
+\subsubsection{Sor- és sémavalidáció}
+
+Az \texttt{ingest.py} a betöltés után minden táblára ellenőrzi a sorszámot a CSV-ből előre meghatározott értékkel összevetve (\autoref{tab:loaded_tables}). A \texttt{schema.py} a dimenziók építése után hasonlóan ellenőrzi: a \texttt{dim\_time} pontosan $75 \times 48 = 3\,600$ sort, a \texttt{dim\_cell} kizárólag aktív (POI-bejegyzéssel rendelkező) cellákat, a \texttt{dim\_user} pedig (\texttt{uid, dataset}) szerint egyedi kombinációkat tartalmaz.
+
+\subsubsection{Lekérdezési teljesítmény}
+
+Reprezentatív lekérdezések futási idejét az \autoref{tab:perf} foglalja össze (DuckDB v1.4, 6~mag, 10~GB memórialimit, 3~000~MB-os adatbázisfájl). A 111~M soros \texttt{mobility1} \texttt{GROUP BY (uid, d)} aggregációja $\approx 3{,}7$ másodperc alatt végez --- ez igazolja a 6.\ fejezetben leírt választást: oszlopos tárolás és vektorizált végrehajtás mellett a 141~M soros adathalom egyetlen 16~GB-os gépen, interaktív időablakban feldolgozható.
+
+\begin{table}[H]
+\centering
+\caption{Reprezentatív DuckDB-lekérdezések futtatási ideje (saját mérés).}
+\label{tab:perf}
+\begin{tabular}{l r r}
+\hline
+\textbf{Lekérdezés} & \textbf{Eredmény-sorok} & \textbf{Idő (s)} \\
+\hline
+\texttt{COUNT(*)} \texttt{mobility1} (111~M sor)            &           1 & 0{,}01 \\
+\texttt{COUNT(*)} \texttt{mobility2} (29~M sor)             &           1 & $<\!0{,}01$ \\
+\texttt{GROUP BY uid} aggregáció \texttt{mobility1}-en      &     100\,000 & 0{,}69 \\
+\texttt{GROUP BY (uid,d)} aggregáció \texttt{mobility1}-en  &  7\,147\,619 & 3{,}69 \\
+\texttt{JOIN dim\_cell} \texttt{(x,y)} szerint, POI-zonánként &           9 & 1{,}07 \\
+\texttt{user\_daily\_features1} olvasás + \texttt{AVG}      &           1 & 0{,}01 \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsubsection{Anomáliadetekció stabilitása}
+
+A rögzített \texttt{random\_state = 42} determinisztikus reprodukálhatóságot biztosít: az \texttt{anomaly.py} ismételt futtatásai bitre azonos \texttt{anomaly\_scores.parquet} fájlt állítanak elő. Címkézett ground-truth hiányában a modell kvalitatív validációját az anomálisnak minősített felhasználók szignifikánsan magasabb mobilitási mutatói adják (gyrációs sugár 4{,}52$\times$, otthon--munkahely távolság 10{,}98$\times$, lásd \autoref{tab:anomaly_comparison}).

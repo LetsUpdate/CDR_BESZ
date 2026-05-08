@@ -1,0 +1,74 @@
+% !TEX root = ../main.tex
+\subsection{Adatfeldolgozási architektúrák CDR-hez}
+  
+A CDR állományokkal mindig hatalmas adatmennyiséget kapunk, néha százmilliós nagyságrendben. A feldolgozásukhoz mindenképp big data eljárások kellenek \cite{pinter2022awakening, zhang2019connected}. Egy tipikus adatfeldolgozási pipeline lépései a következők:
+
+1. \textbf{Nyers adatok beolvasása és staging:} Elsőként a szolgáltató által biztosított nyers CDR fájlokat olvassuk be. Ilyenkor egységesítjük a formátumot például a „széles” formátumból normalizált táblákba rendezzük az adatokat, és gondoskodunk az időbélyegek megfelelő kezeléséről \cite{pinter2022awakening}.
+
+2. \textbf{Előfeldolgozás és tisztítás:} Itt kiszűrjük a hiányzó vagy hibás rekordokat például az eszközváltások követésénél felmerülő anomáliákat –, és egységesítjük a cella- és előfizető-azonosítókat \cite{pinter2020artificial, pinter2022awakening}. Ha valószínűségi helymeghatározást alkalmazunk, ebben a fázisban korrigáljuk a „pattogó” cellaváltások okozta hibás elmozdulásokat is \cite{traag2011social}.
+
+3. \textbf{Tartós tárolás (Data Warehouse / Historikus tároló):} A tisztított adatokat historikus adatbázisba vagy elosztott fájlrendszerbe töltjük. Ha igazán nagy léptékű CDR-adatokat kezelünk, sokszor Hadoop HDFS rendszert használunk \cite{zhang2019connected}.
+
+4. \textbf{Analitikai réteg és metrikaszámítás:} A feldolgozott adatokból aggregált statisztikákat és mobilitási mutatókat számolunk (például gyrációs sugár, entrópia, home–work távolság) \cite{pinter2020artificial, pinter2021evaluating}. A skálázhatóság miatt a modern rendszerek gyakran Spark keretrendszert alkalmaznak, hogy párhuzamosan dolgozhassanak \cite{zhang2019connected}.
+
+5. \textbf{Adatkiadás és vizualizáció:} Végül a számított mutatókat térben is megjelenítjük például Voronoi-poligonokat vagy hőtérképeket használunk az elemzéshez \cite{pinter2021evaluating, xavier2012analyzing}.
+\begin{figure}[htbp]
+\centering
+% A scale=0.75 és transform shape paraméterekkel kicsinyítjük le
+\begin{tikzpicture}[
+    scale=0.75, 
+    transform shape,
+    node distance=0.6cm, % A dobozok közötti távolság csökkentése
+    auto,
+    % Doboz stílus
+    block/.style={
+        rectangle, 
+        draw=black!60, 
+        fill=blue!5, 
+        thick, 
+        text width=2.5cm, % Keskeny dobozok, hogy elférjen
+        align=center, 
+        font=\small,      % Kicsit kisebb betűméret
+        rounded corners=2pt, 
+        minimum height=3.2em,
+        drop shadow
+    },
+    % Nyíl stílus
+    arrow/.style={
+        -{Latex[length=2mm]}, 
+        thick, 
+        draw=black!70
+    }
+]
+
+    % --- 1. Adatbetöltés ---
+    \node [block, fill=orange!10] (step1) {\textbf{1. Betöltés}\\ \footnotesize(Ingestion)};
+
+    % --- 2. Tisztítás ---
+    \node [block, right=of step1, fill=yellow!10] (step2) {\textbf{2. Tisztítás}\\ \footnotesize(Cleaning)};
+
+    % --- 3. Tárolás ---
+    \node [block, right=of step2, fill=green!10] (step3) {\textbf{3. Tárolás}\\ \footnotesize(Storage)};
+
+    % --- 4. Analitika ---
+    \node [block, right=of step3, fill=cyan!10] (step4) {\textbf{4. Analitika}\\ \footnotesize(Analytics)};
+
+    % --- 5. Vizualizáció ---
+    \node [block, right=of step4, fill=purple!10] (step5) {\textbf{5. Vizualizáció}\\ \footnotesize(Output)};
+
+    % --- Nyilak ---
+    \draw [arrow] (step1) -- (step2);
+    \draw [arrow] (step2) -- (step3);
+    \draw [arrow] (step3) -- (step4);
+    \draw [arrow] (step4) -- (step5);
+
+\end{tikzpicture}
+\caption{A CDR adatfeldolgozási folyamat (pipeline) vázlata.}
+\label{fig:cdr_pipeline_horiz}
+\end{figure}
+
+\subsection{CDR előfeldolgozási lépések}
+
+Az adatfeldolgozási pipeline-ban az előfeldolgozás az egyik legfontosabb lépés. Itt pótoljuk a hiányzó adatokat, kiszűrjük a zajt, és eltávolítjuk a duplikált rekordokat. Ezek nélkül a statisztikai elemzések egyszerűen nem lennének megbízhatók \cite{pinter2020artificial, pinter2022awakening}. A mobilhálózatoknál gyakran előfordulnak úgynevezett „antennaugrások”, amikor a felhasználó mozdulatlan, de a hálózat mégis egy másik cellára kapcsolja. Ilyenkor a valós tartózkodási hely torzul. A szakirodalom többféle módszert is ajánl erre: simított Voronoi-tesszellációt vagy valószínűségi helymeghatározási modelleket, amelyekkel pontosabb helyadatot kapunk \cite{traag2011social}.
+
+Térben a cellákat rendszerint szabályos rácsokra vagy közigazgatási egységekre, például kerületekre vetítik át. Ez leegyszerűsíti a területi elemzést, kezelhetőbb egységeket ad \cite{rhoads2020measuring, pinter2021evaluating}. Időben legtöbbször órás vagy napi idősorokat készítünk, ezekből lesznek a mobilitási mutatók, például a napi aktivitási görbék \cite{pinter2022awakening}. Az adatvédelmet is komolyan vesszük: az előfizetői azonosítókat minden esetben pszeudo-azonosítóval (hashed ID) cseréljük, és ezeket szigorú protokollok szerint kezeljük, hogy véletlenül se lehessen visszafejteni őket \cite{zhang2019connected, pinter2022awakening, batty2012smart}.

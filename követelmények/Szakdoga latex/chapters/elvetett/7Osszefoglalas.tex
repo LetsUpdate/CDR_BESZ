@@ -1,0 +1,70 @@
+% !TEX root = ../main.tex
+A Szakdolgozat 1 során áttekintettük a mobiltelefon-hálózatok felépítését, a CDR
+adatok szerkezetét és adatvédelmi kérdéseit. Részletes szakirodalmi áttekintést
+nyújtottunk a CDR alapú humán mobilitás kutatásokról: bemutattuk, hogy a
+távolságok eloszlása vágott hatványfüggvényt (truncated power-law) követ, és hogy
+a gyrációs sugár jellemzi az egyének által bejárt területet \cite{gonzalez2008understanding}.
+Elemeztük azokat az alkalmazási területeket, ahol a CDR hasznos lehet, mint
+például a közlekedéstervezés, a smart city koncepciók \cite{batty2012smart}, a
+szocioökonómiai elemzések \cite{pinter2021evaluating, rhoads2020measuring} és az
+eseménydetektálás \cite{traag2011social}. Részletesen áttekintettük a mobilitási
+metrikák számítási módszereit, különös tekintettel a gyrációs sugárra és az
+entrópia-alapú mutatókra, és összefoglaltuk a fontosabb metrikákat egy táblázatban.
+
+Bemutattuk továbbá a kutatási célú CDR adatkészletek általános struktúráját,
+kitértünk az adatminőségre és az etikai megfontolásokra a szakirodalom alapján
+\cite{pinter2022awakening, zhang2019connected}. Végül részletes rendszertervet dolgoztunk
+ki a CDR adatok feldolgozására: megfogalmaztuk a funkcionális és nem
+funkcionális követelményeket, vázoltuk a magas szintű architektúrát, kidolgoztuk
+a csillagsémás adatbázis-tervet, az ETL folyamatot és a tervezett technológiák listáját.
+
+\subsection{Kapcsolat a Szakdolgozat 2-vel}
+A következő fázisban (Szakdolgozat 2) a tervezett rendszer gyakorlati megvalósítása
+történik meg. Ennek főbb lépései:
+\begin{itemize}
+	\item A CDR adatok tényleges betöltése a staging és DWH környezetbe; az ETL
+		folyamatok implementálása Python és SQL használatával.
+
+	\item A mobilitási metrikák számítását végző modulok fejlesztése, beleértve a
+		gyrációs sugár, a térbeli és időbeli entrópia, a home–work távolság és
+		további mutatók implementálását
+		\cite{pinter2021evaluating, pinter2022awakening}.
+
+	\item A \texttt{fact\_mobility} tábla feltöltése, majd a mutatók exportja QGIS
+		kompatibilis formátumba; tematikus térképek, hőtérképek és interaktív dashboardok
+		készítése.
+
+	\item Esettanulmányok készítése: például a város különböző kerületeinek
+		összehasonlítása a gyrációs sugár vagy az entrópia alapján, ingázási hálózatok
+		vizualizálása, valamint eseménydetektálás implementálása
+		\cite{pinter2021evaluating, traag2011social}.
+
+	\item A rendszer teljesítményének és pontosságának értékelése; skálázhatósági
+		tesztek végrehajtása.
+\end{itemize}
+E munka eredményeként létrejön egy működő CDR analitikai rendszer, amely képes
+valós városi adatok feldolgozására, a mobilitási mintázatok feltárására és térképi
+megjelenítésére.
+
+
+\subsection{A megvalósítás kiemelt kutatási iránya: Adatvezérelt szolgáltatás-tervezés}
+
+A Szakdolgozat 2 implementációs fázisában a rendszer fejlesztését egy konkrét, piaci és városüzemeltetési szempontból is releváns koncepció köré építem fel: \textbf{„Városi ingázás-optimalizálás és dinamikus szolgáltatás-tervezés”}.
+
+Jelenleg a várostervezés gyakran statikus (pl. népszámlálási) adatokra támaszkodik, amelyek nem követik le a valós idejű lakossági mozgásokat. A kutatásom célja, hogy a CDR adatok dinamikus természetét kihasználva egy olyan döntéstámogató réteget hozzak létre, amely feltárja a város rejtett infrastrukturális hiányosságait.
+
+Ezt a célt a már definiált metrikák újszerű összekapcsolásával valósítom meg:
+
+\begin{itemize}
+    \item \textbf{Összefüggés-vizsgálat:} A \textit{Home-Work távolság} (mint kötött pályás mozgás) és a \textit{Radius of Gyration} ($r_g$) (mint teljes mozgástér) korrelációjának elemzése.
+    \item \textbf{„Mobilitási kényszer” azonosítása:} Olyan városi zónák detektálása, ahol a lakók a feltételezettnél nagyobb mobilitási sugarat ($r_g$) kénytelenek bejárni, ami a helyi szolgáltatások (munkahelyek, kereskedelem) hiányára utal.
+\end{itemize}
+
+A megvalósított rendszer két konkrét területen nyújt majd üzleti és társadalmi értéket:
+
+\begin{enumerate}
+    \item \textbf{Közlekedésszervezési optimalizálás:} A statikus menetrendek helyett a valós csúcsidőszaki terhelések és a tényleges (nem lakcímkártya alapú) ingázási útvonalak feltárása, támogatva a járatsűrűség hatékonyabb tervezését.
+    \item \textbf{Üzleti telephely-választás (Site Selection):} A rendszer képes lesz kijelölni azokat az „ellátatlan” zónákat, ahol magas a nappali népsűrűség, de aránytalanul nagy az utazási kényszer. Ez értékes inputot jelent kereskedelmi egységek vagy szolgáltatók számára az ideális lokáció kiválasztásához.
+\end{enumerate}
+
+Ez a fókusz biztosítja, hogy az elkészülő informatikai megoldás nem csupán technológiai demonstráció lesz, hanem valós városi problémákra (torlódás, szolgáltatáshiány) ad adatvezérelt válaszokat.

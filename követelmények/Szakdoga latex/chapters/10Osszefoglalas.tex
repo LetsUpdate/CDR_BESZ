@@ -1,0 +1,58 @@
+% !TEX root = ../main.tex
+
+\subsection{A dolgozat eredményeinek összefoglalása}
+
+A dolgozat egy nyílt forráskódú CDR adathalmaz feldolgozására alkalmas rendszer megtervezését és teljes körű implementálását mutatta be. A munka az alábbi fő területeket ölelte fel:
+
+\begin{enumerate}
+\item \textbf{Szakirodalmi áttekintés.} A CDR-alapú mobilitásvizsgálatok legfontosabb megállapításait összefoglaltuk: az emberi mozgás hosszú farkú eloszlást követ \cite{gonzalez2008understanding}, a mobilhálózati adatokon cirkadián ritmus mutatható ki \cite{pinter2022awakening}, a CDR alkalmas szocioökonómiai \cite{pinter2021evaluating, rhoads2020measuring} és esemény-detektálási \cite{traag2011social} célokra, valamint a smart city alkalmazásokban egyre nagyobb szerepet kap \cite{batty2012smart}.
+
+\item \textbf{Rendszerterv és technológiaválasztás.} A 141~millió soros adathalmaz egyetlen gépre méretezett, in-process feldolgozásához a DuckDB oszlopos adatbázis-motort választottuk. A térbeli megjelenítéshez GeoPandas, pyproj és contextily kombinációt alkalmaztunk; az anomáliadetekcióhoz scikit-learn Isolation Forest algoritmust implementáltunk.
+
+\item \textbf{ETL-pipeline megvalósítása.} A négy fázisból álló pipeline (ingest $\rightarrow$ features $\rightarrow$ schema $\rightarrow$ anomaly) DuckDB-n és Python szkripteken alapul. A keletkező adatbázis tartalmazza a két ténytáblát (összesen 140{,}9~millió rekord, 125\,000 független felhasználó) és három dimenzió-táblát: dim\_time (3\,600~sor), dim\_cell (20\,146~sor), dim\_user (121\,607~sor; a detektált otthonnal rendelkező \texttt{(uid, dataset)} kombinációk).
+
+\item \textbf{Mobilitási metrikák.} Felhasználónként és naponként kiszámítottuk a gyrációs sugarat, a Shannon-entrópiát, a helydiverzitást, az otthon- és munkahely-cellát, valamint az euklideszi home--work távolságot. A gyrációs sugár mediánja 3~435~m; a felhasználók 27{,}8\%-a napi 10~km-nél messzebbre ingázik.
+
+\item \textbf{Anomáliadetekció.} Az Isolation Forest modellt a normál viselkedés alapján tanítottuk, majd a vészhelyzeti időszak ($d \geq 60$) adatain értékeltük. Az anomálisnak minősített felhasználók gyrációs sugara 4{,}52-szer, home--work távolsága közel 11-szer nagyobb a normálisnál.
+
+\item \textbf{GIS-megjelenítés.} Öt térkép készült OpenStreetMap alaptérképen: aktivitás-sűrűség, időszak-összehasonlítás, POI-zónák, ingázási vonalak és anomáliák térbeli eloszlása.
+\end{enumerate}
+
+\subsection{A megvalósítás korlátai}
+
+A rendszer egyetlen gépen fut, ami a feldolgozási kapacitás felső korlátját jelenti; elosztott cluster-környezetben ez a korlát feloldható lenne Apache Spark-ra vagy felhőalapú DuckDB-re való átállással, az SQL lekérdezések módosítása nélkül. A cellaméret közel 500~m; ennél finomabb térbeli felbontás az adatforrásból nem nyerhető. Az anomáliadetekcióhoz nem áll rendelkezésre felcímkézett validációs halmaz, ezért az eredmények a kiugró mintázatok jelzésére alkalmasak, nem az anomáliaosztályok definitív azonosítására.
+
+\subsection{Jövőbeli fejlesztési irányok}
+
+\begin{itemize}
+\item \textbf{Felügyelt anomáliadetekció:} ha a vészhelyzet típusa ismert (pl.\ természeti katasztrófa vagy közegészségügyi vészhelyzet), a megközelítés felügyelt tanulásos módszerekre --- például gradient boosting osztályozóra --- fejleszthető tovább.
+\item \textbf{Temporális klaszterezés:} a felhasználók mozgástípus szerinti csoportosítása (kötött ingázó, szabad mozgású, nagy mobilitású) hasznos input lenne várostervezési döntéstámogatáshoz.
+\item \textbf{Szegregáció-elemzés:} a Rhoads et al.\ \cite{rhoads2020measuring} módszertanát alkalmazva a Nagoya-adaton vizsgálható lenne, hogy a mozgásminták milyen mértékű térbeli elkülönülést mutatnak POI-zónák szerint.
+\item \textbf{Valós idejű feldolgozás:} a DuckDB-alapú pipeline kiegészíthető lenne egy streaming réteggel (pl.\ Apache Kafka), amely lehetővé tenné a CDR adatok közel valós idejű feldolgozását és anomáliák azonnali jelzését.
+\end{itemize}
+
+\subsection{A szakdolgozati feladatkiírás teljesülése}
+
+A \autoref{tab:checklist} a feladatkiírás nyolc fő pontja szerint összegzi a dolgozat eredményeit, és megjelöli, hogy az adott rész mely fejezetekben, illetve forráskód-modulokban valósult meg.
+
+\begin{table}[H]
+\centering
+\caption{A feladatkiírás teljesülése.}
+\label{tab:checklist}
+\begin{tabular}{p{0.45\textwidth} p{0.30\textwidth} c}
+\hline
+\textbf{Feladatpont} & \textbf{Megvalósítás helye} & \textbf{Státusz} \\
+\hline
+1.\ Szakirodalmi áttekintés a CDR feldolgozásáról & 2--3.\ fejezet & \checkmark \\
+2.\ Mobilitási metrikák számítási eljárásai       & 4.\ fejezet & \checkmark \\
+3.\ Open-source CDR bemutatása (YJMob100K)        & 5.\ fejezet & \checkmark \\
+4.\ Rendszerterv az adatfeldolgozásra             & 6.\ fej.\ + \texttt{rendszerterv.mmd} & \checkmark \\
+5.\ Implementáció: ETL és metrikaszámítás         & 7.\ fej.\ + \texttt{src/ingest.py, features.py, schema.py, anomaly.py} & \checkmark \\
+6.\ GIS-alkalmazás implementációja                & 8.\ fej.\ + \texttt{src/geo.py} + \texttt{06-gis.ipynb} & \checkmark \\
+7.\ Alkalmazási példák és elemzések               & 9.\ fej.\ + \texttt{05/07/09/10} jegyzőkönyvek & \checkmark \\
+8.\ Összefoglaló                                  & 10.\ fejezet & \checkmark \\
+\hline
+\end{tabular}
+\end{table}
+
+A dolgozat tehát mind a nyolc kiírt feladatpontot lefedi, kiegészítve két, a konzulensi szakirodalomhoz \cite{pinter2020artificial,pinter2021evaluating,pinter2022awakening} kapcsolódó alkalmazási esettel: a Pintér-féle "ébredő város"-elemzés reprodukciójával (\autoref{subsec:circadian}) és a négyosztályú felhasználói archetípus-modell (\emph{Anchorite}, \emph{Commuter}, \emph{Explorer}, \emph{Nomad}) klaszterezéssel történő reprodukciójával (\autoref{subsec:archetypes}).

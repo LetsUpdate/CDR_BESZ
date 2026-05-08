@@ -1,0 +1,39 @@
+% !TEX root = ../main.tex
+\subsection{Mobiltelefon-hálózatok felépítése röviden}
+A mobiltelefon-hálózatok cellás architektúrán alapulnak. Egy szolgáltató területét kisebb cellákra osztja, melyek közepén bázisállomások (torony, antenna) helyezkednek el. Egy készülék mindig a legközelebbi toronyhoz csatlakozik, és a hálózat szükség esetén cellaváltást hajt végre. A mobilitás során úgynevezett „handover” folyamaton megy keresztül, amikor a hálózat áthelyezi az eszközt egy másik cellára. Az adatok pontosságát a cellák mérete határozza meg, városi környezetben a sűrűn telepített tornyok miatt az ellátási terület akár 2~km$^{2}$ alatti is lehet, míg vidéken a cellák több négyzetkilométert fednek le \cite{gonzalez2008understanding, pinter2022awakening}. A mobiltoronyok nagy lefedettsége miatt a pozícióbecslés jelentősen durvább a GPS koordinátákhoz képest \cite{gonzalez2008understanding}. Egy rekord csak a kiszolgáló torony azonosítóját tárolja; a cella belső szerkezetéről nem tartalmaz információt \cite{gonzalez2008understanding}.
+
+\begin{figure}[h!]
+    \centering
+    % A szögletes zárójelben állíthatod a méretet (itt a szövegszélesség 90%-a)
+    % A kapcsos zárójelbe írd a lementett kép pontos nevét kiterjesztéssel együtt!
+    \includegraphics[width=0.9\textwidth]{img/handover_schema.png}
+    
+    % Ez jelenik meg a kép alatt:
+    \caption{Sematikus cella-architektúra és a cellaváltás (Handover) folyamata}
+    
+    % Ezzel tudsz hivatkozni rá a szövegben (pl. \ref{fig:handover}):
+    \label{fig:handover}
+\end{figure} 
+
+\subsection{Call Detail Record fogalma}
+A CDR adatok eredetileg számlázási célból létrehozott naplófájl, amely a hálózatban történt aktív eseményeket tartalmazza, mint például a hívásokat, SMS-küldést és mobilinternet-használatot.\cite{pinter2020artificial, zhang2019connected}. 
+Az adatkészletekben egy rekord jellemző tartalma:
+\begin{itemize}
+    \item \textbf{Időbélyeg (Timestamp):} Az esemény pontos dátuma és kezdő időpontja. (Gyakran csonkítják pl. 10 másodperces pontosságra)
+    \item \textbf{Anonimizált előfizetői azonosító (Hashed User ID):} Egy pszeudonim, titkosított kulcs, amely az egyedi SIM-kártyát azonosítja.
+    \item \textbf{Cella azonosító (Cell ID):} A tranzakciót kiszolgáló bázisállomás egyedi azonosítója.
+    \item \textbf{Esemény típusa:} Mobiladat / Hívás / SMS 
+    \item \textbf{Eszközinformáció (Opcionális):} Egyes adatkészletek tartalmaznak a TAC (Type Allocation Code) kódot.
+\end{itemize}\cite{pinter2022awakening, pinter2020artificial}
+
+Technikai vagy adatvédelmi okokból a kutatói adatkészletek általában nem tartalmazzák az alábbiakat:
+\begin{itemize}
+    \item \textbf{Passzív cellaváltás (Handover):} Bár a hálózat rögzítheti a cellaváltást, kutatási célokra nem elérhetők \cite{pinter2022awakening}.
+    \item \textbf{Pontos pozíció:} A CDR pontossága elmarad a GPS-étől: a sűrűn lakott területeken néhány száz méter, míg vidéken több kilométer is lehet \cite{gonzalez2008understanding}.
+    \item \textbf{Szemantikai tartalom:} Kizárólag a metaadatokra (hol, mikor, ki) korlátozódnak; a tartalomra (mit, miért) vonatkozó információ nem áll rendelkezésre \cite{batty2012smart}.
+\end{itemize}
+
+
+\subsection{Adatvédelem és anonimizálás}
+Az adatok személyes jellegűek, hiszen a felhasználók mozgását és viselkedési mintáit tartalmazzák. A szolgáltatók ezért az adatokat anonimizálják: az előfizetői azonosítót pszeudoazonosítóval (hashed value) helyettesítik, és elválasztják a számlázási adatbázistól \cite{pinter2022awakening}. A személyazonosítás vagy pontos címek visszakövetése tilos \cite{zhang2019connected}. A Data4Refugees projektnek például a Türk Telekom olyan CDR adatokat bocsátott kutatók rendelkezésére, amelyekben csupán a felhasználó állampolgárságára (török vagy szír) és a hívások irányára vonatkozó információ maradt meg \cite{rhoads2020measuring}. 
+
