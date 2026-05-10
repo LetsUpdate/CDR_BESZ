@@ -41,19 +41,43 @@ A betöltés végén sorszám-validáció ellenőrzi, hogy az elvárt sorok mind
 
 \subsection{Mobilitási metrikák számítása}
 
-A \texttt{features.py} CTE-láncolatot (\textit{Common Table Expression}) alkalmaz: minden egyes metrika önálló SQL CTE-ben kerül kiszámításra, a záró \texttt{SELECT} pedig összekapcsolja azokat. A DuckDB optimalizálója a több logikai lépést egyetlen vektorizált végrehajtási tervvé fordítja le.
+A \texttt{features.py} kétfázisú köztes-tábla stratégiát alkalmaz a memóriabiztonság érdekében. Először két kis staging tábla készül: \texttt{\_cell\_counts} (uid, d, x, y, cnt) és \texttt{\_slot\_counts} (uid, d, t, cnt), amelyek a 111~M soros forrást kb.\ 16-szorosára tömörítik. Minden egyes metrika ezekből, önálló \texttt{CREATE TABLE AS} lépésben kerül kiszámításra, a záró \texttt{SELECT} pedig nyolc kis köztes táblát kapcsol össze --- szemben az egyetlen CTE-láncolattal, amely nagy adathalmazon memória-túllépést okozna.
 
-A lánc hat lépést végez. A \textbf{base} CTE felhasználónként és naponként meghatározza a ping-számot (\texttt{total\_pings}) és a centroid koordinátáit ($c_x$, $c_y$). A \textbf{diversity} az egyedi cellák számát adja, az $x \cdot 201 + y$ hash-kulcs alapján. Az \textbf{entropy} a Shannon-entrópiát számítja $-\sum p_i \log_2 p_i$ alakban. A \textbf{rog} a gyrációs sugarat anizotrop cellaméretekkel (easting $\approx 454{,}5$~m, northing $\approx 555{,}6$~m); ennek figyelembe nem vétele szisztematikus torzítást okozna:
+Az összes kiszámított metrikát az \autoref{tab:features\_metrics} foglalja össze.
 
-\begin{lstlisting}[language=SQL, caption={A gyrációs sugár SQL-implementációja anizotrop cellaméretekkel.}, label={lst:rog}, basicstyle=\small\ttfamily, breaklines=true, frame=single]
-SQRT(AVG(
-    POWER((m.x::DOUBLE - b.cx) * 555.556, 2) +
-    POWER((m.y::DOUBLE - b.cy) * 454.545, 2)
-)) AS radius_of_gyration
+\begin{table}[H]
+\centering
+\caption{A \texttt{features.py} által kiszámított metrikák \texttt{(uid, d)} szinten.}
+\label{tab:features_metrics}
+\begin{tabular}{l p{9cm}}
+\hline
+\textbf{Oszlop} & \textbf{Leírás} \\
+\hline
+\texttt{weekend\_flag}           & $d \bmod 7 \in \{0, 6\}$ --- hétvége-e a nap ($d = 0$ vasárnap) \\
+\texttt{total\_pings}            & Napi ping-szám (aktivitási szint) \\
+\texttt{location\_diversity}     & Egyedi $(x, y)$ cellák száma a napban \\
+\texttt{shannon\_entropy}        & $-\sum p_i \log_2 p_i$ --- helyek kiszámíthatósága (bit) \\
+\texttt{radius\_of\_gyration}    & Ping-súlyozott térbeli szóródás a centroidtól (méter) \\
+\texttt{activity\_concentration} & Top-3 cella ping-aránya (0--1) \\
+\texttt{return\_rate}            & Tegnap is látogatott cellák hányada (0--1) \\
+\texttt{peak\_activity\_slot}    & 0--47 időrés a maximális ping-számmal \\
+\texttt{home\_x, home\_y}        & Leggyakoribb éjszakai cella ($t = 0\ldots11$) \\
+\texttt{work\_x, work\_y}        & Leggyakoribb munkaidős cella ($t = 16\ldots28$, 08:00--14:00) \\
+\texttt{home\_work\_dist\_m}     & Euklideszi home--work távolság (méter) \\
+\hline
+\end{tabular}
+\end{table}
+
+A gyrációs sugár az egyszerű átlag helyett ping-súlyozott változatot alkalmaz, anizotrop cellaméretekkel (easting $\approx 454{,}5$~m, northing $\approx 555{,}6$~m); mindkét korrekcióra szükség van a szisztematikus torzítás elkerüléséhez:
+
+\begin{lstlisting}[language=SQL, caption={A gyrációs sugár SQL-implementációja: ping-súlyozott, anizotrop cellaméretekkel.}, label={lst:rog}, basicstyle=\small\ttfamily, breaklines=true, frame=single]
+SQRT(SUM(cnt * (
+    POWER((x::DOUBLE - cx) * 555.556, 2) +
+    POWER((y::DOUBLE - cy) * 454.545, 2)
+)) / SUM(cnt)) AS radius_of_gyration
 \end{lstlisting}
 
-A \textbf{home} CTE az éjszakai időrésekben ($t = 0\ldots11$) leggyakoribb cellát választja \texttt{ROW\_NUMBER()} ablakfüggvénnyel, a \textbf{work} pedig hasonlóan a 08:00--14:00 közötti munkaidős sávban; a home--work távolság euklideszi formulával készül a vetületi méterértékekből.
-
+A \texttt{return\_rate} kiszámítása \texttt{LAG()} ablakfüggvénnyel egyetlen menetben fut a staging táblán, elkerülve a memóriaigényes önillesztést. A home- és work-cella detekció \texttt{ROW\_NUMBER()} ablakfüggvénnyel valósul meg; holtverseny esetén a kisebb $(x, y)$ koordinátájú cella kap elsőbbséget.
 \subsection{A csillagséma kialakítása}
 
 A \texttt{schema.py} a 6.\ fejezetben tervezett három dimenzió-táblát materializálja az adatbázisban. A \textbf{dim\_time} (3\,600~sor) a 75~nap × 48~időrés minden kombinációjához tartalmaz metaadatot (óra, napszak, \texttt{dow}, \texttt{is\_weekday}, \texttt{period\_label}); a $d = 0$ napot vasárnaphoz rendeltük az aktivitásmintázat heti periodicitása alapján. A \textbf{dim\_cell} (20\,146~sor) az aktív rácscellákat tartalmazza domináns POI-kategóriával és 9-zónás összevont besorolással (élelmezés, kereskedelem, szabadidő, közlekedés, parkolás, egészségügy, oktatás, szolgáltatás, ipar). A \textbf{dim\_user} (121\,607~sor) minden \texttt{(uid, dataset)} kombinációhoz egy sort tárol a detektált otthon- és munkahely-cellával; a 125\,000 felhasználóból $\approx 3\,400$-hoz nincs stabil otthon-detekció elegendő éjszakai ping hiányában.
