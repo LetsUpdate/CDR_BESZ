@@ -1,24 +1,6 @@
 % !TEX root = ../main.tex
 
-\subsection{A dolgozat eredményeinek összefoglalása}
-
-A dolgozat egy nyílt forráskódú CDR adathalmaz feldolgozására alkalmas rendszer megtervezését és teljes körű implementálását mutatta be. A munka az alábbi fő területeket ölelte fel:
-
-\begin{enumerate}
-\item \textbf{Szakirodalmi áttekintés.} A CDR-alapú mobilitásvizsgálatok legfontosabb megállapításait összefoglaltuk: az emberi mozgás hosszú farkú eloszlást követ \cite{gonzalez2008understanding}, a mobilhálózati adatokon cirkadián ritmus mutatható ki \cite{pinter2022awakening}, a CDR alkalmas szocioökonómiai \cite{pinter2021evaluating, rhoads2020measuring} és esemény-detektálási \cite{traag2011social} célokra, valamint a smart city alkalmazásokban egyre nagyobb szerepet kap \cite{batty2012smart}.
-
-\item \textbf{Rendszerterv és technológiaválasztás.} A 141~millió soros adathalmaz egyetlen gépre méretezett, in-process feldolgozásához a DuckDB oszlopos adatbázis-motort választottuk. A térbeli megjelenítéshez GeoPandas, pyproj és contextily kombinációt alkalmaztunk; az anomáliadetekcióhoz scikit-learn Isolation Forest algoritmust implementáltunk.
-
-\item \textbf{ETL-pipeline megvalósítása.} A négy fázisból álló pipeline (ingest $\rightarrow$ features $\rightarrow$ schema $\rightarrow$ anomaly) DuckDB-n és Python szkripteken alapul. A keletkező adatbázis tartalmazza a két ténytáblát (összesen 140{,}9~millió rekord, 125\,000 független felhasználó) és három dimenzió-táblát: dim\_time (3\,600~sor), dim\_cell (20\,146~sor), dim\_user (121\,607~sor; a detektált otthonnal rendelkező \texttt{(uid, dataset)} kombinációk).
-
-\item \textbf{Mobilitási metrikák.} Felhasználónként és naponként kiszámítottuk a gyrációs sugarat, a Shannon-entrópiát, a helydiverzitást, az otthon- és munkahely-cellát, valamint az euklideszi home--work távolságot. A gyrációs sugár mediánja 3~435~m; a felhasználók 27{,}8\%-a napi 10~km-nél messzebbre ingázik.
-
-\item \textbf{Anomáliadetekció.} Az Isolation Forest modellt a normál viselkedés alapján tanítottuk, majd a vészhelyzeti időszak ($d \geq 60$) adatain értékeltük. Az anomálisnak minősített felhasználók gyrációs sugara 4{,}52-szer, home--work távolsága közel 11-szer nagyobb a normálisnál.
-
-\item \textbf{GIS-megjelenítés.} Öt térkép készült OpenStreetMap alaptérképen: aktivitás-sűrűség, időszak-összehasonlítás, POI-zónák, ingázási vonalak és anomáliák térbeli eloszlása.
-
-\item \textbf{Város szintű eseménydetektálás.} A 11.\ notebook robust baseline + DBSCAN módszertanával 131 város szintű mobilitási eseményt detektáltunk a normál időszakban. A top-10 esemény közül 8 a Nagoya Dome (Vantelin Dome) közvetlen szomszédságában van; további két hetente visszatérő eseményt a Paloma Mizuho Stadium körül azonosítottunk --- valós, OSM-ben földrajzilag is ellenőrizhető sportés rendezvényhelyszínek. A vészhelyzeti időszakban ezzel szemben mindössze 3 kis esemény lépett fel, ami független megerősítést ad az anomália-fejezet kontrakció-paradoxonának.
-\end{enumerate}
+A dolgozat bemutatta, hogy egy nyílt forráskódú CDR adathalmaz egyetlen gépen, in-process oszlopos adatbázissal hatékonyan feldolgozható, és a belőle kinyerhető mobilitási metrikák — gyrációs sugár, Shannon-entrópia, home–work távolság — valós viselkedési különbségeket tükröznek. A vészhelyzeti időszak anomáliáinak gépi tanulással történő azonosítása, az archetípus-alapú felhasználói szegmentáció és a városszintű rendezvénydetektáció együttesen igazolják, hogy a CDR-alapú megközelítés mind kutatatási, mind alkalmazott városi elemzési célokra alkalmas.
 
 \subsection{A megvalósítás korlátai}
 
