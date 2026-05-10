@@ -41,7 +41,7 @@ A betöltés végén sorszám-validáció ellenőrzi, hogy az elvárt sorok mind
 
 \subsection{Mobilitási metrikák számítása}
 
-A \texttt{features.py} kétfázisú köztes-tábla stratégiát alkalmaz a memóriabiztonság érdekében. Először két kis staging tábla készül: \texttt{\_cell\_counts} (uid, d, x, y, cnt) és \texttt{\_slot\_counts} (uid, d, t, cnt), amelyek a 111~M soros forrást kb.\ 16-szorosára tömörítik. Minden egyes metrika ezekből, önálló \texttt{CREATE TABLE AS} lépésben kerül kiszámításra, a záró \texttt{SELECT} pedig nyolc kis köztes táblát kapcsol össze --- szemben az egyetlen CTE-láncolattal, amely nagy adathalmazon memória-túllépést okozna.
+A \texttt{features.py} kétfázisú köztes-tábla stratégiát alkalmaz a memóriabiztonság érdekében. Először két kis staging tábla készül: \texttt{\_cell\_counts} (uid, d, x, y, cnt) és \texttt{\_slot\_counts} (uid, d, t, cnt), amelyek a 111~M soros forrást kb.\ 16-szorosára tömörítik. Minden egyes metrika ezekből, önálló \texttt{CREATE TABLE AS} lépésben kerül kiszámításra, a záró \texttt{SELECT} pedig nyolc kis köztes táblát kapcsol össze szemben az egyetlen CTE-láncolattal, amely nagy adathalmazon memória-túllépést okozna.
 
 Az összes kiszámított metrikát az \autoref{tab:features_metrics} foglalja össze.
 
@@ -53,10 +53,10 @@ Az összes kiszámított metrikát az \autoref{tab:features_metrics} foglalja ö
 \hline
 \textbf{Oszlop} & \textbf{Leírás} \\
 \hline
-\texttt{weekend\_flag}           & $d \bmod 7 \in \{0, 6\}$ --- hétvége-e a nap ($d = 0$ vasárnap) \\
+\texttt{weekend\_flag}           & $d \bmod 7 \in \{0, 6\}$ hétvége-e a nap ($d = 0$ vasárnap) \\
 \texttt{total\_pings}            & Napi ping-szám (aktivitási szint) \\
 \texttt{location\_diversity}     & Egyedi $(x, y)$ cellák száma a napban \\
-\texttt{shannon\_entropy}        & $-\sum p_i \log_2 p_i$ --- helyek kiszámíthatósága (bit) \\
+\texttt{shannon\_entropy}        & $-\sum p_i \log_2 p_i$ helyek kiszámíthatósága (bit) \\
 \texttt{radius\_of\_gyration}    & Ping-súlyozott térbeli szóródás a centroidtól (méter) \\
 \texttt{activity\_concentration} & Top-3 cella ping-aránya (0--1) \\
 \texttt{return\_rate}            & Tegnap is látogatott cellák hányada (0--1) \\
@@ -93,7 +93,7 @@ A pipeline működését sor- és sémaintegritási ellenőrzések (CSV-ből sz�
 
 \subsubsection{Lekérdezési teljesítmény}
 
-Reprezentatív lekérdezések futási idejét az \autoref{tab:perf} foglalja össze (DuckDB v1.4, 6~mag, 10~GB memórialimit, 3~000~MB-os adatbázisfájl). A 111~M soros \texttt{mobility1} \texttt{GROUP BY (uid, d)} aggregációja $\approx 3{,}7$ másodperc alatt végez --- ez igazolja a 6.\ fejezetben leírt választást: oszlopos tárolás és vektorizált végrehajtás mellett a 141~M soros adathalom egyetlen 16~GB-os gépen, interaktív időablakban feldolgozható.
+Reprezentatív lekérdezések futási idejét az \autoref{tab:perf} foglalja össze (DuckDB v1.4, 6~mag, 10~GB memórialimit, 3~000~MB-os adatbázisfájl). A 111~M soros \texttt{mobility1} \texttt{GROUP BY (uid, d)} aggregációja $\approx 3{,}7$ másodperc alatt végez ez igazolja a 6.\ fejezetben leírt választást: oszlopos tárolás és vektorizált végrehajtás mellett a 141~M soros adathalom egyetlen 16~GB-os gépen, interaktív időablakban feldolgozható.
 
 \begin{table}[H]
 \centering

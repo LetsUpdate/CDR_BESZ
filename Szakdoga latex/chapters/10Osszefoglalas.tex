@@ -9,7 +9,7 @@ A rendszer egyetlen gépen fut, ami a feldolgozási kapacitás felső korlátjá
 \subsection{Jövőbeli fejlesztési irányok}
 
 \begin{itemize}
-\item \textbf{Felügyelt anomáliadetekció:} ha a vészhelyzet típusa ismert (pl.\ természeti katasztrófa vagy közegészségügyi vészhelyzet), a megközelítés felügyelt tanulásos módszerekre --- például gradient boosting osztályozóra --- fejleszthető tovább.
+\item \textbf{Felügyelt anomáliadetekció:} ha a vészhelyzet típusa ismert (pl.\ természeti katasztrófa vagy közegészségügyi vészhelyzet), a megközelítés felügyelt tanulásos módszerekre például gradient boosting osztályozóra fejleszthető tovább.
 \item \textbf{Temporális klaszterezés:} a felhasználók mozgástípus szerinti csoportosítása (kötött ingázó, szabad mozgású, nagy mobilitású) hasznos input lenne várostervezési döntéstámogatáshoz.
 \item \textbf{Szegregáció-elemzés:} a Rhoads et al.\ \cite{rhoads2020measuring} módszertanát alkalmazva a Nagoya-adaton vizsgálható lenne, hogy a mozgásminták milyen mértékű térbeli elkülönülést mutatnak POI-zónák szerint.
 \item \textbf{Valós idejű feldolgozás:} a DuckDB-alapú pipeline kiegészíthető lenne egy streaming réteggel (pl.\ Apache Kafka), amely lehetővé tenné a CDR adatok közel valós idejű feldolgozását és anomáliák azonnali jelzését.
