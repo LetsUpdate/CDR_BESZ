@@ -8,7 +8,7 @@ Az YJMob100K adathalmaz nem hozza nyilvánosságra a mérési helyszínt; az ada
 
 A meghatározott koordináta-rendszer az EPSG:2449 (Japan Plane Rectangular CS~VII), amelynek origója 36°~északi szélesség és 137°~35'~keleti hosszúság. Az adatkészletben az $x$ tengelyindex az észak--déli (\textit{northing}), az $y$ index a kelet--nyugati (\textit{easting}) irányba növekszik (lásd 5.~fejezet).
 
-Ellentétben a névleges 500~m-es rácsmérethivatkozással, a cellák nem négyzetesek: az easting irányú méret $5000 / 11 \approx 454{,}5$~m, a northing irányú méret $5000 / 9 \approx 555{,}6$~m. Ez az aszimmetria szisztematikus torzítást okozna a gyrációs sugár és a home--work távolság számításakor, ha nem vesszük figyelembe -- ezért a \texttt{features.py} mindkét értéket explicit módon alkalmazza (ld.\ 7.\ fejezet).
+Ellentétben a névleges 500~m-es rácsmérethivatkozással, a cellák nem négyzetesek: az easting irányú méret $5000 / 11 \approx 454{,}5$~m, a northing irányú méret $5000 / 9 \approx 555{,}6$~m. Az 5.\ fejezetben jelzett aszimmetria elkerülésére a \texttt{features.py} mindkét értéket explicit módon alkalmazza (ld.\ 7.\ fejezet).
 
 A rács sarokpontja (az $(1, 1)$ cella bal alsó sarka) EPSG:2449-ben: easting $= {-60\,682}$~m, northing $= {-166\,667}$~m. Az ebből levezetett teljes kiterjedés: $\approx 91$~km (kelet--nyugat) × $\approx 111$~km (észak--dél).
 

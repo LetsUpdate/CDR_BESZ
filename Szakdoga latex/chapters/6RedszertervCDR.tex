@@ -183,7 +183,6 @@ Az YJMob100K 200$\times$200-as rácsa önmagában nem hordoz földrajzi informá
 
 A rendszerterv megvalósítása során a következő korlátokkal számoltunk:
 \begin{itemize}
-    \item \textbf{Egyetlen gépes feldolgozás:} Elosztott cluster hiányában a DuckDB in-process motorjára támaszkodunk. A 141~millió sor kezelése 16~GB RAM mellett megoldható, de a párhuzamosítás a CPU magok számára korlátozódik.
     \item \textbf{Térbeli pontosság:} A rács cellamérete (${\sim}455 \times 556$~m) durvábbá teszi a pozíciómeghatározást, mint egy valódi bázisállomás-hálózat városi részén. A metrikák így a rácsszintű felbontásra vonatkoznak \cite{gonzalez2008understanding}.
     \item \textbf{Georeferálás bizonytalansága:} A rácsparamétereket inverz mérnöki módszerrel határoztuk meg; az origó pontos helye néhány száz méteres bizonytalansággal terhelt.
     \item \textbf{Anomáliadetekció validálása:} Felügyelet nélküli módszert alkalmazunk (Isolation Forest), amelynek kiértékelése címkézett ground truth adat hiányában korlátozott. Az eredményeket a vészhelyzeti időszak ismert kontextusa alapján értékeljük.

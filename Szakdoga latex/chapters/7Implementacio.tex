@@ -85,32 +85,3 @@ A \texttt{schema.py} a 6.\ fejezetben tervezett három dimenzió-táblát materi
 \subsection{Anomáliadetekció}
 
 Az \texttt{anomaly.py} Isolation Forest algoritmust \cite{liu2008isolation} alkalmaz: a tanítás a dataset1 normál viselkedésén történik, a pontszámozás a dataset2 vészhelyzeti időszakán ($d \geq 60$) fut. A feature-mátrix öt napi metrikából áll (\texttt{total\_pings}, \texttt{location\_diversity}, \texttt{shannon\_entropy}, \texttt{radius\_of\_gyration}, \texttt{home\_work\_dist\_m}), amelyeket StandardScaler normalizál. Paraméterek: \texttt{n\_estimators = 200}, \texttt{contamination = 0.05}, \texttt{random\_state = 42}. A kimenet (uid, d) szintű \texttt{anomaly\_score} és \texttt{is\_anomaly} oszlopokkal az \texttt{anomaly\_scores.parquet} fájlba kerül.
-
-\subsection{Tesztelés, validáció és teljesítménymérés}
-\label{subsec:validation}
-
-A pipeline működését sor- és sémaintegritási ellenőrzések (CSV-ből származó sorszámok és \((\texttt{uid, dataset})\)-egyediség minden táblára), valamint reprezentatív lekérdezések futási idejének mérése igazolja. A felhasználói kohorszok diszjunkt jellegét a \autoref{subsec:two_datasets}.\ szakasz mutatja be.
-
-\subsubsection{Lekérdezési teljesítmény}
-
-Reprezentatív lekérdezések futási idejét az \autoref{tab:perf} foglalja össze (DuckDB v1.4, 6~mag, 10~GB memórialimit, 3~000~MB-os adatbázisfájl). A 111~M soros \texttt{mobility1} \texttt{GROUP BY (uid, d)} aggregációja $\approx 3{,}7$ másodperc alatt végez ez igazolja a 6.\ fejezetben leírt választást: oszlopos tárolás és vektorizált végrehajtás mellett a 141~M soros adathalom egyetlen 16~GB-os gépen, interaktív időablakban feldolgozható.
-
-\begin{table}[H]
-\centering
-\caption{Reprezentatív DuckDB-lekérdezések futtatási ideje (saját mérés).}
-\label{tab:perf}
-\begin{tabular}{l r r}
-\hline
-\textbf{Lekérdezés} & \textbf{Eredmény-sorok} & \textbf{Idő (s)} \\
-\hline
-\texttt{COUNT(*)} \texttt{mobility1} (111~M sor)            &           1 & 0{,}01 \\
-\texttt{COUNT(*)} \texttt{mobility2} (29~M sor)             &           1 & $<\!0{,}01$ \\
-\texttt{GROUP BY uid} aggregáció \texttt{mobility1}-en      &     100\,000 & 0{,}69 \\
-\texttt{GROUP BY (uid,d)} aggregáció \texttt{mobility1}-en  &  7\,147\,619 & 3{,}69 \\
-\texttt{JOIN dim\_cell} \texttt{(x,y)} szerint, POI-zonánként &           9 & 1{,}07 \\
-\texttt{user\_daily\_features1} olvasás + \texttt{AVG}      &           1 & 0{,}01 \\
-\hline
-\end{tabular}
-\end{table}
-
-Az anomáliadetekció a rögzített \texttt{random\_state = 42} miatt determinisztikusan reprodukálható; címkézett ground-truth hiányában a modell kvalitatív validációját az anomálisnak minősített felhasználók szignifikánsan magasabb mobilitási mutatói adják (lásd \autoref{tab:anomaly_comparison}).
