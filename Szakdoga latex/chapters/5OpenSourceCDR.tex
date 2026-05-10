@@ -4,7 +4,7 @@ A jelen fejezet a dolgozat empirikus részének alapját képező \textbf{YJMob1
 
 \subsection{Az YJMob100K adatkészlet áttekintése}
 
-Az YJMob100K adatkészletet Yabe és munkatársai \cite{yabe2023metropolitan} tették közzé 2024-ban a \emph{Scientific Data} folyóiratban, a HuMob Challenge mobilitás-előrejelzési verseny adatforrásaként. Az adatok a Yahoo Japan~Corporation \emph{Yahoo!~MAP} alkalmazásából származnak: anonimizált felhasználók eszközpozícióit rögzítik 30~perces időfelbontással, 75~napon át, egy 200$\times$200-as rácshálóra diszkretizálva. A megfigyelési terület közvetlenül nem nyilvános, ám térbeli sablonillesztéssel egyértelműen Nagoya nagyvárosi régiójához (Aichi prefektúra, Japán) köthető \cite{pinter2024revealing}.
+Az YJMob100K adatkészletet Yabe és munkatársai \cite{yabe2023metropolitan} tették közzé 2023-ban a \emph{Scientific Data} folyóiratban, a HuMob Challenge mobilitás-előrejelzési verseny adatforrásaként. Az adatok a Yahoo Japan~Corporation egyik okostelefon-alkalmazásából (Yahoo Japan Application) származnak: anonimizált felhasználók eszközpozícióit rögzítik 30~perces időfelbontással, 75~napon át, egy 200$\times$200-as rácshálóra diszkretizálva. A megfigyelési terület közvetlenül nem nyilvános, ám térbeli sablonillesztéssel egyértelműen Nagoya nagyvárosi régiójához (Aichi prefektúra, Japán) köthető \cite{pinter2024revealing}.
 
 Az adathalmaz Creative~Commons~BY 4.0 licenc alatt érhető el a Zenodo platformon\footnote{\url{https://zenodo.org/records/14219563}}. A dolgozat a \texttt{v3} adatverziót használja.
 
@@ -16,7 +16,7 @@ Az adathalmaz Creative~Commons~BY 4.0 licenc alatt érhető el a Zenodo platform
 \hline
 \textbf{Tulajdonság} & \textbf{Érték} \\
 \hline
-Forrás                  & Yahoo!~MAP, Yahoo Japan Corporation \\
+Forrás                  & Yahoo Japan Application, Yahoo Japan Corporation \\
 Hivatkozás              & Yabe et al.\ \cite{yabe2023metropolitan} \\
 Megfigyelési terület    & Nagoya, Aichi prefektúra, Japán \\
 Időtartam               & 75~nap \\
@@ -75,7 +75,7 @@ A 85 finomszemcsés POI-kategóriát a \texttt{schema.py} 9 magasabb szintű \te
 Az YJMob100K, mint minden anonimizált, szemcsésített CDR-jellegű adathalmaz, a 3.7.\ szakaszban felsorolt általános korlátokon túl néhány specifikus megfontolást is igényel:
 
 \begin{itemize}
-    \item \textbf{Reprezentativitás:} Az adatok kizárólag a Yahoo!~MAP felhasználói közül kerültek mintavételezésre, így a teljes nagoyai népességet csak részben fedik le; a felhasználói korösszetétel valószínűleg a fiatalabb, technológiailag aktív rétegek felé tolódik el.
+    \item \textbf{Reprezentativitás:} Az adatok kizárólag a Yahoo Japan Application felhasználói közül kerültek mintavételezésre, így a teljes nagoyai népességet csak részben fedik le; a felhasználói korösszetétel valószínűleg a fiatalabb, technológiailag aktív rétegek felé tolódik el.
     \item \textbf{Térbeli felbontás:} A névleges 500~m-es rácsméret-hivatkozás megtévesztő; a tényleges cellaméretek aszimmetrikusak ($\approx 454{,}5 \times 555{,}6$~m, lásd 8.1.\ szakasz), és ennek figyelmen kívül hagyása szisztematikus torzítást okoz a távolság- és területalapú mutatókban.
     \item \textbf{Időbeli horgonyzás hiánya:} Mivel a kezdő dátum nincs nyilvánosságra hozva, az adatok időbeli interpretációja (pl.\ ünnepnapok, évszakhatások) közvetlenül nem lehetséges; csak a relatív heti és napi mintázatok elemezhetők.
     \item \textbf{Esemény-jellegű hiányosság:} A \enquote{vészhelyzeti} időszak típusa rejtett, így az anomáliadetekció eredményei csak strukturálisan értelmezhetők, az adott esemény természetétől függetlenül.
