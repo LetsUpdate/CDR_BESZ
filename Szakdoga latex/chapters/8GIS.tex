@@ -6,7 +6,7 @@ A jelen fejezet az YJMob100K adathalmaz rácskoordinátáinak georeferálását 
 
 Az YJMob100K adathalmaz nem hozza nyilvánosságra a mérési helyszínt; az adatrekordok koordinátái 1--200 közötti rácsindexek, nem geodéziai koordináták. A rács valós térbeli elhelyezkedéséhez a \textit{reverse-engineering-YJMob100K-grid} projekt \cite{pinter2024revealing} eredményeit alkalmaztuk, amely sablonillesztéssel azonosította a megfigyelési területet Nagoya városával (Aichi prefektúra, Japán).
 
-A meghatározott koordináta-rendszer az EPSG:2449 (Japan Plane Rectangular CS~VII), amelynek origója 36°~északi szélesség és 137°~35'~keleti hosszúság. Fontos, hogy az adatkészletben az $x$ tengelyindex az észak--déli (\textit{northing}) irányba növekszik (dél $\rightarrow$ észak), míg az $y$ tengelyindex a kelet--nyugati (\textit{easting}) irányba (nyugat $\rightarrow$ kelet). Ez a konvenció ellentétes a szokásos $(x, y) = (\text{easting, northing})$ rendezéssel, ezért figyelmes kezelése szükséges a georeferálás során.
+A meghatározott koordináta-rendszer az EPSG:2449 (Japan Plane Rectangular CS~VII), amelynek origója 36°~északi szélesség és 137°~35'~keleti hosszúság. Az adatkészletben az $x$ tengelyindex az észak--déli (\textit{northing}), az $y$ index a kelet--nyugati (\textit{easting}) irányba növekszik (lásd 5.~fejezet).
 
 Ellentétben a névleges 500~m-es rácsmérethivatkozással, a cellák nem négyzetesek: az easting irányú méret $5000 / 11 \approx 454{,}5$~m, a northing irányú méret $5000 / 9 \approx 555{,}6$~m. Ez az aszimmetria szisztematikus torzítást okozna a gyrációs sugár és a home--work távolság számításakor, ha nem vesszük figyelembe -- ezért a \texttt{features.py} mindkét értéket explicit módon alkalmazza (ld.\ 7.\ fejezet).
 
@@ -64,17 +64,6 @@ A \autoref{fig:gis03} ábra az aktív cellákat a domináns POI-zóna szerint sz
 \includegraphics[width=0.90\textwidth]{img/gis_03_poi_zones.png}
 \caption{Aktív rácscellákat ábrázoló POI-zónatérkép (9 összevont kategória). Saját szerkesztés.}
 \label{fig:gis03}
-\end{figure}
-
-\subsubsection{Ingázási vonalak térképe}
-
-A \autoref{fig:gis04} ábra az otthon- és munkahely-cellák összekötött vonalpárjait ábrázolja. A sűrű vonalkötegek a főbb ingázási irányokat rajzolják ki; az alacsony átlátszóság (\textit{alpha} = 0{,}05) kiemeli azokat az útvonalakat, amelyeket a legtöbb felhasználó igénybe vesz.
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.90\textwidth]{img/gis_04_commute_lines.png}
-\caption{Otthon--munkahely ingázási vonalak térképe. Saját szerkesztés.}
-\label{fig:gis04}
 \end{figure}
 
 \subsubsection{Anomális felhasználók térbeli eloszlása}
