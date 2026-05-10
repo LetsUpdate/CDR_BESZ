@@ -16,6 +16,8 @@ A dolgozat egy nyílt forráskódú CDR adathalmaz feldolgozására alkalmas ren
 \item \textbf{Anomáliadetekció.} Az Isolation Forest modellt a normál viselkedés alapján tanítottuk, majd a vészhelyzeti időszak ($d \geq 60$) adatain értékeltük. Az anomálisnak minősített felhasználók gyrációs sugara 4{,}52-szer, home--work távolsága közel 11-szer nagyobb a normálisnál.
 
 \item \textbf{GIS-megjelenítés.} Öt térkép készült OpenStreetMap alaptérképen: aktivitás-sűrűség, időszak-összehasonlítás, POI-zónák, ingázási vonalak és anomáliák térbeli eloszlása.
+
+\item \textbf{Város szintű eseménydetektálás.} A 11.\ notebook robust baseline + DBSCAN módszertanával 131 város szintű mobilitási eseményt detektáltunk a normál időszakban. A top-10 esemény közül 8 a Nagoya Dome (Vantelin Dome) közvetlen szomszédságában van; további két hetente visszatérő eseményt a Paloma Mizuho Stadium körül azonosítottunk --- valós, OSM-ben földrajzilag is ellenőrizhető sportés rendezvényhelyszínek. A vészhelyzeti időszakban ezzel szemben mindössze 3 kis esemény lépett fel, ami független megerősítést ad az anomália-fejezet kontrakció-paradoxonának.
 \end{enumerate}
 
 \subsection{A megvalósítás korlátai}
@@ -30,29 +32,3 @@ A rendszer egyetlen gépen fut, ami a feldolgozási kapacitás felső korlátjá
 \item \textbf{Szegregáció-elemzés:} a Rhoads et al.\ \cite{rhoads2020measuring} módszertanát alkalmazva a Nagoya-adaton vizsgálható lenne, hogy a mozgásminták milyen mértékű térbeli elkülönülést mutatnak POI-zónák szerint.
 \item \textbf{Valós idejű feldolgozás:} a DuckDB-alapú pipeline kiegészíthető lenne egy streaming réteggel (pl.\ Apache Kafka), amely lehetővé tenné a CDR adatok közel valós idejű feldolgozását és anomáliák azonnali jelzését.
 \end{itemize}
-
-\subsection{A szakdolgozati feladatkiírás teljesülése}
-
-A \autoref{tab:checklist} a feladatkiírás nyolc fő pontja szerint összegzi a dolgozat eredményeit, és megjelöli, hogy az adott rész mely fejezetekben, illetve forráskód-modulokban valósult meg.
-
-\begin{table}[H]
-\centering
-\caption{A feladatkiírás teljesülése.}
-\label{tab:checklist}
-\begin{tabular}{p{0.45\textwidth} p{0.30\textwidth} c}
-\hline
-\textbf{Feladatpont} & \textbf{Megvalósítás helye} & \textbf{Státusz} \\
-\hline
-1.\ Szakirodalmi áttekintés a CDR feldolgozásáról & 2--3.\ fejezet & \checkmark \\
-2.\ Mobilitási metrikák számítási eljárásai       & 4.\ fejezet & \checkmark \\
-3.\ Open-source CDR bemutatása (YJMob100K)        & 5.\ fejezet & \checkmark \\
-4.\ Rendszerterv az adatfeldolgozásra             & 6.\ fej.\ + \texttt{rendszerterv.mmd} & \checkmark \\
-5.\ Implementáció: ETL és metrikaszámítás         & 7.\ fej.\ + \texttt{src/ingest.py, features.py, schema.py, anomaly.py} & \checkmark \\
-6.\ GIS-alkalmazás implementációja                & 8.\ fej.\ + \texttt{src/geo.py} + \texttt{06-gis.ipynb} & \checkmark \\
-7.\ Alkalmazási példák és elemzések               & 9.\ fej.\ + \texttt{05/07/09/10} jegyzőkönyvek & \checkmark \\
-8.\ Összefoglaló                                  & 10.\ fejezet & \checkmark \\
-\hline
-\end{tabular}
-\end{table}
-
-A dolgozat tehát mind a nyolc kiírt feladatpontot lefedi, kiegészítve két, a konzulensi szakirodalomhoz \cite{pinter2020artificial,pinter2021evaluating,pinter2022awakening} kapcsolódó alkalmazási esettel: a Pintér-féle "ébredő város"-elemzés reprodukciójával (\autoref{subsec:circadian}) és a négyosztályú felhasználói archetípus-modell (\emph{Anchorite}, \emph{Commuter}, \emph{Explorer}, \emph{Nomad}) klaszterezéssel történő reprodukciójával (\autoref{subsec:archetypes}).
