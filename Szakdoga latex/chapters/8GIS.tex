@@ -31,48 +31,18 @@ A \texttt{make\_polygon\_gdf} függvény az összes rácscella poligonját Shape
 
 \subsection{Térképes vizualizációk}
 
-Az alábbiakban bemutatom az öt elkészített GIS térképet.
-
-\subsubsection{Aktivitás-sűrűség térkép}
-
-A \autoref{fig:gis01} ábra a rácscellákon regisztrált ping-ek számát ábrázolja logaritmikus skálán. A belvárosban és a főbb közlekedési csomópontok körzetében sűrűsödő aktivitás jól azonosítható; a periférikus, jellemzően mezőgazdasági vagy erdős területek alacsony aktivitása kirajzolja Nagoya városának körvonalatát.
+A négy fő tematikus térképet egyetlen kompakt panelként mutatom be (\autoref{fig:gis_panel}): (a)~ping-aktivitás logaritmikus skálán~-- a belvárosban és a közlekedési csomópontok körül sűrűsödő ping-szám jól kirajzolja Nagoya körvonalát; (b)~az alapidőszak és a vészhelyzet ($d \geq 60$) közötti aktivitás-változás cellaszinten~-- területileg heterogén kép, a belvárosban csökkenés, az ipari körzetekben stagnálás (megerősíti a 9.~fejezet POI-zóna megfigyelését); (c)~POI-zónatérkép a 85 kategória 9 összevont típusra szervezve~-- a szolgáltatási (8\,664 cella) és ipari (4\,386 cella) zónák dominálnak, parkolói besorolásban mindössze 19 cella van; (d)~anomáliadetekció térbeli vetítése~-- az anomális felhasználó--nap arányok a város perifériáján és a fő kijáratoknál sűrűsödnek, összhangban a 9.~fejezet kontrakciós-paradoxon hipotézisével.
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.90\textwidth]{img/gis_01_activity_map.png}
-\caption{Aktivitás-sűrűség Nagoya rácsán (ping-ek száma cellákon, logaritmikus skála). Saját szerkesztés, OpenStreetMap \copyright~alaptérképen.}
-\label{fig:gis01}
-\end{figure}
-
-\subsubsection{Alap- és vészhelyzeti időszak összehasonlítása}
-
-Az \autoref{fig:gis02} ábra cellákon mutatja az aktivitás relatív változását az alapidőszak (dataset1) és a dataset2 vészhelyzeti szakasza ($d \geq 60$) között. A változás mértéke területileg heterogén: a belváros egyes részein csökkenő, az ipari körzetekben stagnáló aktivitás látható.
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.90\textwidth]{img/gis_02_baseline_vs_emergency.png}
-\caption{Cellaaktivitás relatív változása az alapidőszakhoz képest a vészhelyzeti szakaszban. Saját szerkesztés.}
-\label{fig:gis02}
-\end{figure}
-
-\subsubsection{POI-zónatérkép}
-
-A \autoref{fig:gis03} ábra az aktív cellákat a domináns POI-zóna szerint színezi. A zónabesorolás a 85 POI-kategóriát 9 összevont típusba sorolja; a szolgáltatási és ipari zónák dominálnak a területet tekintve (8~664 és 4~386 cella), míg a parkolói besorolású cellák száma mindössze 19.
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.90\textwidth]{img/gis_03_poi_zones.png}
-\caption{Aktív rácscellákat ábrázoló POI-zónatérkép (9 összevont kategória). Saját szerkesztés.}
-\label{fig:gis03}
-\end{figure}
-
-\subsubsection{Anomális felhasználók térbeli eloszlása}
-
-A \autoref{fig:gis05} ábra az anomáliadetekció eredményét vetíti térképre: az anomálisnak minősített felhasználó--nap párok aránya cellákon belül, a vészhelyzeti időszakban. Az anomális mozgások jellemzően a város perifériáján és a főbb kijáratoknál sűrűsödnek, ami összhangban van azzal a hipotézissel, hogy az érintett felhasználók szokásos körzetükön kívülre kényszerültek.
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.90\textwidth]{img/gis_05_anomaly_map.png}
-\caption{Anomális mozgások térbeli eloszlása a vészhelyzeti időszakban. Saját szerkesztés.}
-\label{fig:gis05}
+\begin{tabular}{cc}
+\includegraphics[width=0.46\textwidth]{img/gis_01_activity_map.png} &
+\includegraphics[width=0.46\textwidth]{img/gis_02_baseline_vs_emergency.png} \\
+(a) Aktivitás-sűrűség (log) & (b) Alap-vs.\ vészhelyzeti változás \\[0.6em]
+\includegraphics[width=0.46\textwidth]{img/gis_03_poi_zones.png} &
+\includegraphics[width=0.46\textwidth]{img/gis_05_anomaly_map.png} \\
+(c) POI-zónatérkép & (d) Anomáliák térbeli eloszlása \\
+\end{tabular}
+\caption{A négy tematikus GIS térkép Nagoya rácsán, OpenStreetMap \copyright{} alaptérképen. Saját szerkesztés.}
+\label{fig:gis_panel}
 \end{figure}

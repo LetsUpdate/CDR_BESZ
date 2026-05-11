@@ -13,44 +13,16 @@ A rendszerterv kialakítását három fő szempont határozta meg:
 
 \subsection{Technológiai alternatívák értékelése}
 
-Az alábbiakban áttekintem az egyes funkcióterületek mérlegelt alternatíváit, és megindokolom a végső választást.
-
-\subsubsection{Adatbázis-motor}
-
-A CDR feldolgozás irodalmában a relációs adatbázisok (PostgreSQL, Microsoft SQL Server), az elosztott big-data rendszerek (Apache Spark + Hadoop HDFS), valamint az újabb beágyazott OLAP megoldások (DuckDB, SQLite) fordulnak elő \cite{zhang2019connected, pinter2020artificial}.
+Az egyes rétegekhez a CDR-szakirodalom \cite{zhang2019connected, pinter2020artificial} alapján mérlegelt alternatívák és a választás indoklása:
 
 \begin{itemize}
-    \item \textbf{PostgreSQL / PostGIS} -- széles körben használt nyílt forráskódú relációs adatbázis, amely a PostGIS kiterjesztéssel natív térbeli indexelést és GIS-funkciókat nyújt. Hátránya, hogy külön szerverfolyamatot igényel, és a 141 millió soros OLAP jellegű aggregációknál (teljes tábla átlagolása, GROUP BY a teljes adaton) sor-orientált tárolása miatt lassabb, mint egy oszlopos motor.
-    \item \textbf{Apache Spark} -- elosztott számítási keretrendszer, amely a szakirodalomban gyakori választás CDR feldolgozásra \cite{zhang2019connected}. Legnagyobb előnye a horizontális skálázhatóság, azonban egyetlen gépen a JVM-alapú futtatókörnyezet magas memóriaigénye és a konfigurációs komplexitás nem indokolt.
-    \item \textbf{DuckDB} -- beágyazott (in-process), oszlopos OLAP adatbázis-motor, amely közvetlenül a Python folyamatba integrálódik. Nem igényel szervertelepítést, a CSV fájlokat streaming módban olvassa (nem kell a teljes adat a memóriában), és a vektorizált végrehajtó motorja révén a százmilliós aggregációk is másodpercek alatt futnak 16~GB RAM mellett.
+    \item \textbf{Adatbázis-motor:} A PostgreSQL/PostGIS sor-orientált tárolása a 141~M soros, GROUP~BY-intenzív OLAP lekérdezésekhez nem ideális, és külön szerverfolyamatot igényelne; az Apache Spark egyetlen gépen JVM-overhead miatt nem indokolt. A választott \textbf{DuckDB} beágyazott, oszlopos OLAP motor: streaming módban olvas CSV-t (a teljes adat soha nem kerül RAM-ba), vektorizált végrehajtása másodperces aggregációkat ad 16~GB RAM mellett, és a Python folyamatba integráltan közvetlenül pandas DataFrame-ekké alakítható az eredmény. SQL-alapú maradás biztosítja, hogy a lekérdezések más motoron (pl.~PostgreSQL) is futtathatók legyenek.
+    \item \textbf{Programozási nyelv:} Az R GIS-támogatása kevésbé kiforrott, az SSIS zárt forráskódú; a \textbf{Python} egységes ökoszisztémát kínál ETL-hez, gépi tanuláshoz és vizualizációhoz. Az ETL-logika modulárisan szervezett szkriptekbe kerül, köztes eredményekkel Parquet formátumban.
+    \item \textbf{GIS:} A QGIS asztali alkalmazás munkafolyamata nehezen szkriptelhető, a PostGIS külön szervert igényel. A választott \textbf{GeoPandas + pyproj + contextily} kombináció Python-kódból végzi a koordináta-transzformációt (EPSG:2449~$\rightarrow$~WGS84), a GeoDataFrame-kezelést és az OpenStreetMap csemperéteget, így teljes a reprodukálhatóság.
+    \item \textbf{Anomáliadetekció és vizualizáció:} A \textbf{scikit-learn Isolation Forest} felügyelet nélküli, jól skálázódó és a Python-stackbe illeszkedik; a nyomtatott minőségű ábrákhoz interaktív (Plotly, Folium) helyett a \textbf{matplotlib + seaborn} kombinációt választottam, ami pontosan illeszkedik a dolgozat ábrázolási céljához.
 \end{itemize}
 
-A \textbf{DuckDB} mellett döntöttem, mivel az adathalom ugyan nagy, de egyetlen gépre fér; az oszlopos tárolás és a vektorizált végrehajtás ideális a mobilitási metrikák GROUP BY-intenzív SQL lekérdezéseihez; és a Python API-n keresztül közvetlenül pandas DataFrame-ekké alakíthatók az eredmények. Az SQL nyelv használata azt is biztosítja, hogy a lekérdezések a jövőben más motoron (pl.\ PostgreSQL) is futtathatók maradjanak.
-
-\subsubsection{Programozási nyelv és ETL megközelítés}
-
-A feldolgozó pipeline nyelveként \textbf{Python} volt a természetes választás, mivel az adatelemzési ökoszisztéma (pandas, scikit-learn, matplotlib) egységes keretet biztosít az ETL, a gépi tanulás és a vizualizáció számára. Alternatívaként felmerülő R-nyelv GIS-támogatása kevésbé kiforrott, az SSIS (SQL Server Integration Services) pedig zárt forráskódú és platformfüggő.
-
-Az ETL logikát közvetlenül Python szkriptekbe szerveztem, modul-szintű felelősségmegosztással. Egy-egy szkript egy-egy pipeline-fázist valósít meg, és a parancssorból futtatható. A köztes eredményeket Parquet formátumban is exportálom, ami hatékony oszlopos tárolást biztosít és biztonsági mentésként is szolgál.
-
-\subsubsection{Térbeli feldolgozás (GIS)}
-
-A GIS komponens feladata a YJMob100K rácskoordinátáinak georeferálása és térképes megjelenítése. A mérlegelt alternatívák:
-\begin{itemize}
-    \item \textbf{QGIS} -- asztali GIS alkalmazás, amely manuális rétegkezelést és interaktív térképszerkesztést kínál. Hátránya, hogy a munkafolyamat nehezen szkriptelhető és nem reprodukálható automatikusan.
-    \item \textbf{PostGIS} -- a PostgreSQL térbeli kiterjesztése; erős a térbeli lekérdezésekben, de külön adatbázis-szervert igényel, és a vizualizációhoz további eszköz (pl.\ QGIS) szükséges.
-    \item \textbf{GeoPandas + pyproj + contextily} -- Python könyvtárcsalád, amely programozottan végzi a koordináta-transzformációkat, GeoDataFrame-eket kezel, és OpenStreetMap alaptérképekre rajzol. Teljes mértékben szkriptelhető és a Jupyter Notebook-okba integrálható.
-\end{itemize}
-
-A \textbf{GeoPandas + pyproj} kombinációt választottam: a pyproj a koordináta-transzformációt végzi (EPSG:2449 $\rightarrow$ WGS84), a GeoPandas a térbeli adatszerkezeteket kezeli, a contextily pedig az OpenStreetMap csemperéteget biztosítja alaptérképként. Ez a megoldás lehetővé teszi, hogy a teljes GIS munkafolyamat Python kódból futtatható és reprodukálható legyen.
-
-\subsubsection{Anomáliadetekció}
-
-A rendszerterv része a viselkedési anomáliák felismerése is, amelyet az adatkészlet második részének vészhelyzeti időszaka (60--74.\ nap) tesz lehetővé. A scikit-learn könyvtár Isolation Forest algoritmusát választottam, mivel felügyelet nélküli módszer (nem igényel címkézett adatot), jól skálázódik a többszázezres mintaméretre, és a Python ökoszisztéma részét képezi.
-
-\subsubsection{Vizualizáció}
-
-A vizualizációhoz a \textbf{matplotlib + seaborn} párost választottam a statikus, tudományos minőségű ábrák elkészítéséhez. Az interaktív megoldásokat (Plotly, Folium, kepler.gl) mérlegeltem, de a dolgozat célja nyomtatott minőségű ábrák előállítása, amelyhez a matplotlib jobban illeszkedik. A kontextushoz az OpenStreetMap alaptérképeket a contextily könyvtár biztosítja.
+A választott eszközöket összefoglaló \autoref{tab:tech_stack} a következő alfejezetben található.
 
 \subsection{A választott technológiai stack összefoglalása}
 

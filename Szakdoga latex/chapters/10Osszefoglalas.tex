@@ -4,13 +4,11 @@ A dolgozat bemutatta, hogy egy nyílt forráskódú CDR adathalmaz egyetlen gép
 
 \subsection{A megvalósítás korlátai}
 
-A rendszer egyetlen gépen fut, ami a feldolgozási kapacitás felső korlátját jelenti; elosztott cluster-környezetben ez a korlát feloldható lenne Apache Spark-ra vagy felhőalapú DuckDB-re való átállással, az SQL lekérdezések módosítása nélkül. A cellaméret közel 500~m; ennél finomabb térbeli felbontás az adatforrásból nem nyerhető. Az anomáliadetekcióhoz nem áll rendelkezésre felcímkézett validációs halmaz, ezért az eredmények a kiugró mintázatok jelzésére alkalmasak, nem az anomáliaosztályok definitív azonosítására.
+A cellaméret közel 500~m; ennél finomabb térbeli felbontás az adatforrásból nem nyerhető. Az anomáliadetekcióhoz nem áll rendelkezésre felcímkézett validációs halmaz, ezért az eredmények a kiugró mintázatok jelzésére alkalmasak, nem az anomáliaosztályok definitív azonosítására.
 
 \subsection{Jövőbeli fejlesztési irányok}
 
 \begin{itemize}
-\item \textbf{Felügyelt anomáliadetekció:} ha a vészhelyzet típusa ismert (pl.\ természeti katasztrófa vagy közegészségügyi vészhelyzet), a megközelítés felügyelt tanulásos módszerekre például gradient boosting osztályozóra fejleszthető tovább.
-\item \textbf{Temporális klaszterezés:} a felhasználók mozgástípus szerinti csoportosítása (kötött ingázó, szabad mozgású, nagy mobilitású) hasznos input lenne várostervezési döntéstámogatáshoz.
-\item \textbf{Szegregáció-elemzés:} a Rhoads et al.\ \cite{rhoads2020measuring} módszertanát alkalmazva a Nagoya-adaton vizsgálható lenne, hogy a mozgásminták milyen mértékű térbeli elkülönülést mutatnak POI-zónák szerint.
-\item \textbf{Valós idejű feldolgozás:} a DuckDB-alapú pipeline kiegészíthető lenne egy streaming réteggel (pl.\ Apache Kafka), amely lehetővé tenné a CDR adatok közel valós idejű feldolgozását és anomáliák azonnali jelzését.
+\item \textbf{Felügyelt anomáliadetekció:} ha a vészhelyzet típusa ismert (pl.\ természeti katasztrófa vagy közegészségügyi vészhelyzet), a megközelítés felügyelt tanulásos módszerekre, például gradient boosting osztályozóra fejleszthető tovább, és a mostani Isolation Forest kontrakciós paradoxonja interpretálható osztálycímkékkel váltható ki.
+\item \textbf{Szegregáció-elemzés:} a Rhoads et al.\ \cite{rhoads2020measuring} módszertanát alkalmazva a Nagoya-adaton vizsgálható lenne, hogy a 9.~fejezetben azonosított archetípusok mozgásmintái milyen mértékű térbeli elkülönülést mutatnak POI-zónák szerint, és e gradiens hogyan változott a vészhelyzet alatt.
 \end{itemize}
