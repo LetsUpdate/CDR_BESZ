@@ -1,10 +1,10 @@
 % !TEX root = ../main.tex
 
-A jelen fejezetben a 6.\ fejezetben megtervezett rendszer tényleges megvalósítását mutatjuk be. A pipeline négy egymásra épülő Python szkriptből áll; mindegyik egy jól körülhatárolt fázist valósít meg, és a projekt gyökérkönyvtárából futtatható.
+A jelen fejezetben a 6.\ fejezetben megtervezett rendszer tényleges megvalósítását mutatom be. A pipeline négy egymásra épülő Python szkriptből áll; mindegyik egy jól körülhatárolt fázist valósít meg, és a projekt gyökérkönyvtárából futtatható.
 
 \subsection{Az adatbetöltési fázis}
 
-Az \texttt{ingest.py} felelős a nyers CSV fájlok DuckDB adatbázisba töltéséért. Az adatbázis-kapcsolat létrehozásakor a DuckDB szálkezelését az elérhető 6~processzormaghoz, memóriahasználatát pedig 10~GB-os limithez igazítjuk (\texttt{SET threads TO 6}, \texttt{SET memory\_limit = '10GB'}). A CSV fájlok betöltése a DuckDB beépített \texttt{read\_csv} függvényével történik, streaming módban: a teljes fájl soha nem kerül egyszerre a memóriába. Az oszlopok explicit típusmegjelölést kapnak (pl.\ \texttt{UINTEGER}, \texttt{UTINYINT}, \texttt{USMALLINT}), ezzel minimalizálva a memóriahasználatot az automatikus típusbecsléshez képest:
+Az \texttt{ingest.py} felelős a nyers CSV fájlok DuckDB adatbázisba töltéséért. Az adatbázis-kapcsolat létrehozásakor a DuckDB szálkezelését az elérhető 6~processzormaghoz, memóriahasználatát pedig 10~GB-os limithez igazítom (\texttt{SET threads TO 6}, \texttt{SET memory\_limit = '10GB'}). A CSV fájlok betöltése a DuckDB beépített \texttt{read\_csv} függvényével történik, streaming módban: a teljes fájl soha nem kerül egyszerre a memóriába. Az oszlopok explicit típusmegjelölést kapnak (pl.\ \texttt{UINTEGER}, \texttt{UTINYINT}, \texttt{USMALLINT}), ezzel minimalizálva a memóriahasználatot az automatikus típusbecsléshez képest:
 
 \begin{lstlisting}[language=SQL, caption={A \texttt{mobility1} tábla létrehozása streaming CSV-olvasással.}, label={lst:mobility_load}, basicstyle=\small\ttfamily, breaklines=true, frame=single]
 CREATE TABLE mobility1 AS
@@ -80,7 +80,7 @@ SQRT(SUM(cnt * (
 A \texttt{return\_rate} kiszámítása \texttt{LAG()} ablakfüggvénnyel egyetlen menetben fut a staging táblán, elkerülve a memóriaigényes önillesztést. A home- és work-cella detekció \texttt{ROW\_NUMBER()} ablakfüggvénnyel valósul meg; holtverseny esetén a kisebb $(x, y)$ koordinátájú cella kap elsőbbséget.
 \subsection{A csillagséma kialakítása}
 
-A \texttt{schema.py} a 6.\ fejezetben tervezett három dimenzió-táblát materializálja az adatbázisban. A \textbf{dim\_time} (3\,600~sor) a 75~nap × 48~időrés minden kombinációjához tartalmaz metaadatot (óra, napszak, \texttt{dow}, \texttt{is\_weekday}, \texttt{period\_label}); a $d = 0$ napot vasárnaphoz rendeltük az aktivitásmintázat heti periodicitása alapján. A \textbf{dim\_cell} (20\,146~sor) az aktív rácscellákat tartalmazza domináns POI-kategóriával és 9-zónás összevont besorolással (élelmezés, kereskedelem, szabadidő, közlekedés, parkolás, egészségügy, oktatás, szolgáltatás, ipar). A \textbf{dim\_user} (121\,607~sor) minden \texttt{(uid, dataset)} kombinációhoz egy sort tárol a detektált otthon- és munkahely-cellával; a 125\,000 felhasználóból $\approx 3\,400$-hoz nincs stabil otthon-detekció elegendő éjszakai ping hiányában.
+A \texttt{schema.py} a 6.\ fejezetben tervezett három dimenzió-táblát materializálja az adatbázisban. A \textbf{dim\_time} (3\,600~sor) a 75~nap × 48~időrés minden kombinációjához tartalmaz metaadatot (óra, napszak, \texttt{dow}, \texttt{is\_weekday}, \texttt{period\_label}); a $d = 0$ napot vasárnaphoz rendeltem az aktivitásmintázat heti periodicitása alapján. A \textbf{dim\_cell} (20\,146~sor) az aktív rácscellákat tartalmazza domináns POI-kategóriával és 9-zónás összevont besorolással (élelmezés, kereskedelem, szabadidő, közlekedés, parkolás, egészségügy, oktatás, szolgáltatás, ipar). A \textbf{dim\_user} (121\,607~sor) minden \texttt{(uid, dataset)} kombinációhoz egy sort tárol a detektált otthon- és munkahely-cellával; a 125\,000 felhasználóból $\approx 3\,400$-hoz nincs stabil otthon-detekció elegendő éjszakai ping hiányában.
 
 \subsection{Anomáliadetekció}
 

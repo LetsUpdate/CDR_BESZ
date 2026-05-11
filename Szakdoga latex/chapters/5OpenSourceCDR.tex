@@ -45,19 +45,19 @@ Az alapadatfájlok (\texttt{yjmob100k-dataset1.csv}, \texttt{yjmob100k-dataset2.
     \item \texttt{x}, \texttt{y} -- rácskoordináták, $1 \le x, y \le 200$.
 \end{itemize}
 
-Fontos sajátosság, hogy az $x$ tengely a north--south (\textit{northing}) iránynak, az $y$ tengely az east--west (\textit{easting}) iránynak felel meg. Ez ellentétes a Descartes-koordináták szokásos $(x, y) = (\text{easting, northing})$ konvenciójával, és a feldolgozó kód minden ponton explicit módon kezeli (lásd 7.\ és 8.\ fejezet). Az adatfelvétel sem napszakot, sem dátumot nem rögzít közvetlenül; a hét napjainak ($d$~modulo~7) megfeleltetését empirikusan, az aktivitásmintázat heti periodicitásából vezettük le (lásd 9.7.\ szakasz).
+Fontos sajátosság, hogy az $x$ tengely a north--south (\textit{northing}) iránynak, az $y$ tengely az east--west (\textit{easting}) iránynak felel meg. Ez ellentétes a Descartes-koordináták szokásos $(x, y) = (\text{easting, northing})$ konvenciójával, és a feldolgozó kód minden ponton explicit módon kezeli (lásd 7.\ és 8.\ fejezet). Az adatfelvétel sem napszakot, sem dátumot nem rögzít közvetlenül; a hét napjainak ($d$~modulo~7) megfeleltetését empirikusan, az aktivitásmintázat heti periodicitásából vezettem le (lásd 9.7.\ szakasz).
 
 \subsection{A két részadatkészlet közötti kapcsolat}
 \label{subsec:two_datasets}
 
 A Zenodo-adatközlés (v3) szerint a két fájl \emph{két diszjunkt felhasználói kohorszot} ír le ugyanazon a 75~napos időablakon és rácsterületen: a \texttt{dataset1} egy üzleti szokásrend szerinti („business-as-usual") populációt (100\,000~fő), a \texttt{dataset2} pedig egy ettől független, kisebb populációt (25\,000~fő) tartalmaz, amelynek utolsó 15~napját (\(d=60\ldots74\)) egy nem dokumentált kollektív viselkedési zavar (\enquote{vészhelyzet}) érinti.
 
-Fontos figyelmeztetés: az \texttt{uid} mező mindkét fájlban 0-tól indul és \emph{kizárólag a saját fájljára érvényes} -- közös személyazonosítóként nem használható. A numerikus értékkészletek átfedése (\texttt{dataset2}: $0\ldots24\,999$ \(\subset\) \texttt{dataset1}: $0\ldots99\,999$) önmagában nem jelent személyazonosság-egyezést. Ezt empirikusan is ellenőriztük: a két fájl azonos \texttt{uid}-jeihez detektált otthoni cellák közül mindössze 2 esett egybe (a 23\,953 közös azonosítóból), az átlagos rácstávolságuk pedig $\approx 75$ cella ($\approx 38$~km), ami a véletlen-baseline ($\approx 104$ cella) közelében van. Ha a két fájl ugyanazokat a személyeket írná le, a home-cellák túlnyomó többségének egybe kéne esnie a tartózkodási hely napról-napra való stabilitása miatt.
+Fontos figyelmeztetés: az \texttt{uid} mező mindkét fájlban 0-tól indul és \emph{kizárólag a saját fájljára érvényes} -- közös személyazonosítóként nem használható. A numerikus értékkészletek átfedése (\texttt{dataset2}: $0\ldots24\,999$ \(\subset\) \texttt{dataset1}: $0\ldots99\,999$) önmagában nem jelent személyazonosság-egyezést. Ezt empirikusan is ellenőriztem: a két fájl azonos \texttt{uid}-jeihez detektált otthoni cellák közül mindössze 2 esett egybe (a 23\,953 közös azonosítóból), az átlagos rácstávolságuk pedig $\approx 75$ cella ($\approx 38$~km), ami a véletlen-baseline ($\approx 104$ cella) közelében van. Ha a két fájl ugyanazokat a személyeket írná le, a home-cellák túlnyomó többségének egybe kéne esnie a tartózkodási hely napról-napra való stabilitása miatt.
 
 Ennek a szerkezetnek két következménye van a dolgozat módszertanára nézve:
 \begin{enumerate}
-    \item A vészhelyzet hatását \emph{populációszintű} (between-subject) összehasonlítással vizsgáljuk: a \texttt{dataset1} szolgál baseline-ként, a \texttt{dataset2} pedig a kezelt csoportként (lásd 7.4.\ és 9.5.\ szakasz).
-    \item Az anomáliadetekciós modellt a \texttt{dataset1} normál mintáján tanítjuk, és a \texttt{dataset2} vészhelyzeti időszakára alkalmazzuk; mivel a két kohorsz független, az általánosíthatósághoz a populációs heterogenitást kontrollálni kell (lásd 7.4.\ szakasz).
+    \item A vészhelyzet hatását \emph{populációszintű} (between-subject) összehasonlítással vizsgálom: a \texttt{dataset1} szolgál baseline-ként, a \texttt{dataset2} pedig a kezelt csoportként (lásd 7.4.\ és 9.5.\ szakasz).
+    \item Az anomáliadetekciós modellt a \texttt{dataset1} normál mintáján tanítom, és a \texttt{dataset2} vészhelyzeti időszakára alkalmazom; mivel a két kohorsz független, az általánosíthatósághoz a populációs heterogenitást kontrollálni kell (lásd 7.4.\ szakasz).
 \end{enumerate}
 
 \subsection{Kísérő POI-fájlok}

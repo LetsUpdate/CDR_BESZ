@@ -3,9 +3,9 @@
 \subsection{A fejezet áttekintése}
 \label{subsec:eredmenyek_intro}
 
-A jelen fejezet a megvalósított rendszer által kiszámított mobilitási metrikák statisztikai jellemzőit, a napi és heti aktivitásmintázatokat, a felhasználói archetípusokat, az anomáliadetekció eredményeit, valamint a vészhelyzeti és visszatérő mobilitási események detektálását mutatja be. A bemutatott számadatok kivétel nélkül a tényleges DuckDB-adatbázisból és a Parquet-fájlokból lekérdezett értékek; minden ábra és táblázat a \texttt{src/notebooks/} alatti jegyzőkönyvek újrafuttatásából származik.
+Ebben a fejezetben a megvalósított rendszer által kiszámított mobilitási metrikák statisztikai jellemzőit, a napi és heti aktivitásmintázatokat, a POI-zónák aktivitását, az anomáliadetekció eredményeit, a kollektív cirkadián ritmust, a felhasználói archetípusokat, valamint a város szintű mobilitási események detektálását mutatom be. A bemutatott számadatok kivétel nélkül a tényleges DuckDB-adatbázisból és a Parquet-fájlokból lekérdezett értékek; minden ábra és táblázat a \texttt{src/notebooks/} alatti jegyzőkönyvek újrafuttatásából származik.
 
-Az alfejezetek logikai íve az alábbi: (i)~először a felhasználói metrikák statikus eloszlását vizsgáljuk (\ref{subsec:eloszlasok}); (ii)~ezt követi a heti ciklus visszafejtése és a hétvége--hétköznap kontraszt (\ref{subsec:dow}); (iii)~a térbeli dimenziót a POI-zónák aktivitása képviseli (\ref{subsec:poi_zonak}); (iv)~az Isolation Forest anomáliadetekciós eredményeit a vészhelyzeti időszakra vonatkoztatjuk és magyarázzuk az itt jelentkező kontrakció-paradoxont (\ref{subsec:anomaly}); (v)~a napi cirkadián ritmust elemezzük a Pintér--Felde-féle ,,ébredő város" módszertanával (\ref{subsec:circadian}); (vi)~a felhasználókat viselkedési típusokba soroljuk K-Means klaszterezéssel és a klaszterek POI-affinitását is megvizsgáljuk (\ref{subsec:archetypes}); (vii)~végül egy önálló esettanulmány-szerű alfejezet a város szintjén kiugró mobilitási események detektálását és valós nagoyai helyszínekhez (Nagoya Dome, Paloma Mizuho Stadium, Toyota City vasúti csomópont) kötését tárgyalja (\ref{subsec:events}). A fejezetet egy összegző áttekintő tábla zárja (\ref{subsec:eredmenyek_osszegzo}).
+Az alfejezetek logikai íve az alábbi: (i)~először a felhasználói metrikák statikus eloszlását vizsgálom (\ref{subsec:eloszlasok}); (ii)~ezt követi a heti ciklus visszafejtése és a hétvége--hétköznap kontraszt (\ref{subsec:dow}); (iii)~a térbeli dimenziót a POI-zónák aktivitása képviseli (\ref{subsec:poi_zonak}); (iv)~az Isolation Forest anomáliadetekciós eredményeit a vészhelyzeti időszakra vonatkoztatom, és magyarázom az itt jelentkező kontrakciós paradoxont (\ref{subsec:anomaly}); (v)~a napi cirkadián ritmust a Pintér--Felde-féle ,,ébredő város'' módszertanával elemzem (\ref{subsec:circadian}); (vi)~a felhasználókat viselkedési típusokba sorolom K-Means klaszterezéssel, és a klaszterek POI-affinitását is megvizsgálom (\ref{subsec:archetypes}); (vii)~végül egy önálló esettanulmány-szerű alfejezet a város szintjén kiugró mobilitási események detektálását és valós nagoyai helyszínekhez (Nagoya Dome, Paloma Mizuho Stadium, Toyota City vasúti csomópont) kötését tárgyalja (\ref{subsec:events}). A fejezetet egy összegző áttekintő táblázat zárja (\ref{subsec:eredmenyek_osszegzo}).
 
 \subsection{Mobilitási metrikák eloszlása}
 \label{subsec:eloszlasok}
@@ -37,12 +37,12 @@ Shannon-entrópia (bit)       & --     & 2{,}66 \\
 \end{tabular}
 \end{table}
 
-A felhasználók 27{,}8\%-a napi 10~km-nél nagyobb otthon--munkahely távolságot tesz meg ez az arány a japán nagyváros-környéki ingázási szokásoknak megfelelő értéket mutat. A jellemzők erősen jobbra aszimmetrikus, hosszan elnyúló farkat mutató eloszlása összhangban van González et al.\ \cite{gonzalez2008understanding} vágott hatványfüggvény-modelljével.
+A felhasználók 27{,}8\%-a napi 10~km-nél nagyobb otthon--munkahely távolságot tesz meg, ami a japán nagyváros-környéki ingázási szokásoknak megfelelő érték. A jellemzők erősen jobbra aszimmetrikus, hosszú farkú eloszlása összhangban van González et al.\ \cite{gonzalez2008understanding} vágott hatványfüggvény-modelljével.
 
 \subsection{Heti ciklus és a hétvége--hétköznap kontraszt}
 \label{subsec:dow}
 
-Az YJMob100K dokumentációja a $d=0$ napot nem datalálja kalendáriumi naphoz; a heti ciklus visszafejtését a \texttt{08-dow-analysis.ipynb} jegyzőkönyvben végeztem el. A 75 napos idősorra $d \bmod 7$ szerinti aggregáció stabil heti mintázatot mutat: a legalacsonyabb összes ping ($\approx$1{,}27~millió/nap) a $d \bmod 7 = 0$ értékhez tartozik, majd kedd--csütörtökre nő 1{,}57~millió-ra, pénteken eri el a maximumot ($\approx$1{,}61~millió), és szombatra ismét lecsökken ($\approx$1{,}35~millió). Ez egyértelműen a klasszikus japán munkahét-mintázat: \textbf{$d=0$ tehát vasárnap}, ezt a megfeleltetést használja a teljes dolgozat (lásd \autoref{fig:dowverif}).
+Az YJMob100K dokumentációja a $d=0$ napot nem köti kalendáriumi naphoz; a heti ciklus visszafejtését a \texttt{08-dow-analysis.ipynb} jegyzőkönyvben végeztem el. A 75 napos idősorra $d \bmod 7$ szerinti aggregáció stabil heti mintázatot mutat: a legalacsonyabb napi összes ping ($\approx$1{,}27~millió) a $d \bmod 7 = 0$ értékhez tartozik, majd kedd--csütörtökre 1{,}57~millióra nő, pénteken éri el a maximumot ($\approx$1{,}61~millió), és szombatra ismét lecsökken ($\approx$1{,}35~millió). Ez egyértelműen a klasszikus japán munkahét-mintázat: \textbf{$d=0$ tehát vasárnap}, ezt a megfeleltetést használja a teljes dolgozat (lásd \autoref{fig:dowverif}).
 
 \begin{figure}[H]
 \centering
@@ -51,7 +51,7 @@ Az YJMob100K dokumentációja a $d=0$ napot nem datalálja kalendáriumi naphoz;
 \label{fig:dowverif}
 \end{figure}
 
-A hétvégi mozgás a hétköznapihoz képest \textbf{15{,}7\%-kal csökken} (1{,}31~millió vs.\ 1{,}56~millió ping/nap). A felhasználói metrikák szintjén a kontraszt még élesebb: a gyrációs sugár mediánja hétköznap 3\,632~m, hétvégén 2\,891~m (--20{,}4\%); a Shannon-entrópia mediánja 2{,}75~bit-ről 2{,}58~bit-re csökken; a helydiverzitás mediánja 8 cella/napról 7-re essék. Érdekes módon az átlagos gyrációs sugár alig változik (5\,623~m vs.\ 5\,140~m, --8{,}6\%) ez arra utal, hogy a hétvégi csökkenés nem a hosszú farkú eloszlás szélsőértékeit, hanem a felhasználói tömeg ,,középét" érinti: a tipikus napi ingázó marad otthon, míg a ráadásul mozgó felhasználói csoport (pl.\ utazók, kirándulók) arányaiban kevésbé csökken.
+A hétvégi mozgás a hétköznapihoz képest \textbf{15{,}7\%-kal csökken} (1{,}31~millió vs.\ 1{,}56~millió ping/nap). A felhasználói metrikák szintjén a kontraszt még élesebb: a gyrációs sugár mediánja hétköznap 3\,632~m, hétvégén 2\,891~m (--20{,}4\%); a Shannon-entrópia mediánja 2{,}75~bitről 2{,}58~bitre esik (--6{,}2\%); a helydiverzitás mediánja 8 cella/napról 7-re csökken. Érdekes módon az átlagos gyrációs sugár alig változik (5\,623~m vs.\ 5\,140~m, --8{,}6\%) ez arra utal, hogy a hétvégi csökkenés nem a hosszú farkú eloszlás szélsőértékeit, hanem a felhasználói tömeg ,,középét'' érinti: a tipikus napi ingázó otthon marad, míg a hétvégén is mozgó felhasználói csoport (pl.\ utazók, kirándulók) arányaiban kevésbé csökken.
 
 \begin{figure}[H]
 \centering
@@ -63,7 +63,7 @@ A hétvégi mozgás a hétköznapihoz képest \textbf{15{,}7\%-kal csökken} (1{
 \subsection{POI-zónák aktivitása}
 \label{subsec:poi_zonak}
 
-A \autoref{fig:impl02} ábra a cellánkénti aktivitás megoszlását mutatja POI-zóna és időszak szerint. A vészhelyzeti időszakban a szabadidős zónájú cellák aktivitása csökkent a legjobban, míg az ipari zónában szinte nem változott a mozgásszám összhangban azzal, hogy az ipari telephelyek üzemeltetése a korlátozások alatt is folytatódott.
+A \autoref{fig:impl02} ábra a cellánkénti aktivitás megoszlását mutatja POI-zóna és időszak szerint. A vészhelyzeti időszakban a szabadidős zónájú cellák aktivitása csökkent a legnagyobb mértékben, míg az ipari zónában szinte változatlan maradt a mozgásszám -- ez összhangban van azzal, hogy az ipari telephelyek üzemeltetése a korlátozások alatt is folytatódott.
 
 \begin{figure}[H]
 \centering
@@ -86,40 +86,41 @@ A \autoref{fig:impl05} ábra a napi anomáliaráta idősorát ábrázolja a data
 \label{fig:impl05}
 \end{figure}
 
-Az eredmény látszólag ellentmondásos: a vészhelyzeti időszakban kevesebb anomáliát mértünk, holott éppen ekkor várnánk a rendellenes viselkedés arányának növekedését. A jelenség magyarázata, hogy a vészhelyzetben a mozgások kollektíven beszűkültek és egyöntetűbbé váltak, ezért az Isolation Forest amely a tipikus viselkedéstől való távolságot méri kevesebb mintát minősített szélsőségesnek. Aki mégis rendellenes maradt, az viszont annál kiugróbb értékeket mutatott, amint az a következő részben látszik.
+Az eredmény látszólag ellentmondásos: a vészhelyzeti időszakban kevesebb anomáliát mértem, holott éppen ekkor várnánk a rendellenes viselkedés arányának növekedését. A jelenség magyarázata, hogy a vészhelyzetben a mozgások kollektíven beszűkültek és egyöntetűbbé váltak, ezért az Isolation Forest -- amely a tipikus viselkedéstől való távolságot méri -- kevesebb mintát minősített szélsőségesnek. Aki viszont mégis rendellenes maradt, az annál kiugróbb értékeket mutatott, amint a következő részben látszik.
 
 \subsubsection{Anomális és normális felhasználók összehasonlítása}
 
-A \autoref{fig:impl06} ábra a vészhelyzeti időszak anomális és normális felhasználóinak mobilitási jellemzőit veti össze boxplot-diagramokon. Az anomális felhasználók minden vizsgált dimenzióban szélsőséges értékeket mutatnak (\autoref{tab:anomaly_comparison}):
+A \autoref{fig:impl06} ábra a vészhelyzeti időszak ($d \geq 60$) anomális és normális felhasználóinak mobilitási jellemzőit veti össze boxplot-diagramokon, felhasználó--napi bontásban. Az anomális csoport minden vizsgált dimenzióban szisztematikusan magasabb értékeket mutat (\autoref{tab:anomaly_comparison}):
 
 \begin{table}[H]
 \centering
-\caption{Anomális és normális felhasználók mobilitási jellemzőinek mediánjai a vészhelyzeti időszakban.}
+\caption{Anomális és normális felhasználók mobilitási jellemzőinek mediánjai a vészhelyzeti időszakban (felhasználó--napi rekordok, $d \geq 60$). Saját számítás a \texttt{user\_daily\_features2} táblából.}
 \label{tab:anomaly_comparison}
 \begin{tabular}{l r r r}
 \hline
 \textbf{Jellemző} & \textbf{Anomális} & \textbf{Normális} & \textbf{Arány} \\
 \hline
-Gyrációs sugár (m)         & 16~900 & 3~736  & 4{,}52× \\
-Home--work távolság (m)    & 36~459 & 3~320  & 10{,}98× \\
-Helydiverzitás (cella/nap) & 14     & 8      & 1{,}75× \\
+Gyrációs sugár (m)         & 6~117 & 3~387 & 1{,}81× \\
+Home--work távolság (m)    & 7~896 & 2~818 & 2{,}80× \\
+Shannon-entrópia (bit)     & 2{,}90 & 2{,}64 & 1{,}10× \\
+Helydiverzitás (cella/nap) & 9     & 8     & 1{,}12× \\
 \hline
 \end{tabular}
 \end{table}
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.90\textwidth]{img/impl_06_anomaly_feature_comparison.png}
-\caption{Anomális és normális felhasználók jellemzőinek összehasonlítása boxplot-diagramokon, a vészhelyzeti időszakban. Saját számítás.}
+\includegraphics[width=0.95\textwidth]{img/impl_06_anomaly_feature_comparison.png}
+\caption{Anomális és normális felhasználók jellemzőinek összehasonlítása boxplot-diagramokon, a vészhelyzeti időszakban ($d \geq 60$). A gyrációs sugár és a home--work távolság logaritmikus tengelyen. Saját számítás.}
 \label{fig:impl06}
 \end{figure}
 
-A gyrációs sugár 4{,}52-szeres és a home--work távolság közel 11-szeres különbsége arra utal, hogy az anomális felhasználók lényegesen nagyobb területet jártak be a vészhelyzet alatt is vélhetően olyan egyének, akik nem tudtak otthon maradni, és hosszú, szokásostól eltérő útvonalakat tettek meg. Ez az eredmény összhangban áll Traag et al.\ \cite{traag2011social} esemény-detektálási megfigyeléseivel, miszerint rendkívüli helyzetekben a mobilhálózati adatban is mérhető szélsőséges mobilitás-növekedés figyelhető meg egy kisebb felhasználói csoportnál.
+A home--work távolság közel háromszoros és a gyrációs sugár közel kétszeres mediáneltérése arra utal, hogy az anomális felhasználók a vészhelyzet alatt is lényegesen nagyobb területet jártak be -- vélhetően olyan egyének, akik nem tudtak otthon maradni, és hosszú, a szokásostól eltérő útvonalakat tettek meg. Ez az eredmény összhangban áll Traag et al.\ \cite{traag2011social} esemény-detektálási megfigyeléseivel, miszerint rendkívüli helyzetekben egy kisebb felhasználói csoportnál a mobilhálózati adatban is mérhető szélsőséges mobilitásnövekedés figyelhető meg.
 
 \subsection{Cirkadián ritmus és az "ébredő város" reprodukciója}
 \label{subsec:circadian}
 
-A Pintér és Felde \cite{pinter2022awakening} által Budapest mobilhálózati adatain bemutatott "ébredő város" jelenség vagyis a városi aktivitás reggeli felfutásának időzítése reprodukálható a YJMob100K adathalmazon is. A \autoref{fig:circ01} ábra a 30~perces időrésekre aggregált átlagos aktivitást ábrázolja a normál (dataset1) és a vészhelyzeti (dataset2, $d \geq 60$) időszakra.
+A Pintér és Felde \cite{pinter2022awakening} által Budapest mobilhálózati adatain bemutatott ,,ébredő város'' jelenség -- vagyis a városi aktivitás reggeli felfutásának időzítése -- a YJMob100K adathalmazon is reprodukálható. A \autoref{fig:circ01} ábra a 30~perces időrésekre aggregált átlagos aktivitást ábrázolja a normál (dataset1) és a vészhelyzeti (dataset2, $d \geq 60$) időszakra.
 
 \begin{figure}[H]
 \centering
@@ -128,12 +129,12 @@ A Pintér és Felde \cite{pinter2022awakening} által Budapest mobilhálózati a
 \label{fig:circ01}
 \end{figure}
 
-Az "ébredési idő" formálisan az a $t_{\mathrm{wake}}$ időpont, amelynél az aggregált aktivitás felfelé tartva eléri az éjszakai alapérték és a nappali plató közötti 50\,\%-os küszöböt (Pintér és Felde \cite{pinter2022awakening} módszertanát követve, lineáris interpolációval a két szomszédos időrés között). Ezzel a definícióval $t_{\mathrm{wake}}$ a normál időszakban 6{,}38~óra (kb.\ 06:23), a vészhelyzet előtti dataset2 alapidőszakban 6{,}25~óra, a vészhelyzet alatt pedig 6{,}14~óra (kb.\ 06:08). A vészhelyzet tehát mintegy 9--14~perccel előrébb tolta a kollektív ébredést, miközben az éjszakai (00:00--05:00) aktivitás 53{,}0\%-kal nőtt, a nappali plató szintje viszont csak 1{,}8\%-kal csökkent. Ez az aszimmetria jól illeszkedik Pintér és Felde \cite{pinter2022awakening} azon megfigyeléséhez, hogy a rendkívüli helyzetek nem feltétlenül a teljes aktivitást, hanem inkább annak időzítését és összetételét változtatják meg.
+Az ,,ébredési idő'' formálisan az a $t_{\mathrm{wake}}$ időpont, amelynél az aggregált aktivitás felfelé haladva eléri az éjszakai alapérték és a nappali plató közötti 50\,\%-os küszöböt (Pintér és Felde \cite{pinter2022awakening} módszertanát követve, a két szomszédos időrés közötti lineáris interpolációval). Ezzel a definícióval $t_{\mathrm{wake}}$ a normál időszakban 6{,}38~óra (kb.\ 06:23), a vészhelyzet előtti dataset2 alapidőszakban 6{,}25~óra, a vészhelyzet alatt pedig 6{,}14~óra (kb.\ 06:08). A vészhelyzet tehát mintegy 9--14~perccel előrébb tolta a kollektív ébredést, miközben az éjszakai (00:00--05:00) aktivitás 53{,}0\%-kal nőtt, a nappali plató szintje viszont csak 1{,}8\%-kal csökkent. Ez az aszimmetria jól illeszkedik Pintér és Felde \cite{pinter2022awakening} azon megfigyeléséhez, hogy a rendkívüli helyzetek nem feltétlenül a teljes aktivitást, hanem inkább annak időzítését és összetételét változtatják meg.
 
 \subsection{Felhasználói archetípusok K-Means klaszterezéssel}
 \label{subsec:archetypes}
 
-A Pintér \cite{pinter2020artificial} disszertációjában leírt mobilitási archetípusok reprodukálhatók a YJMob100K adatokon is. Mind a 100~000 dataset1-beli felhasználóra K-Means algoritmust ($k=4$, \texttt{random\_state}=42) futtattunk három log-transzformált \'es skalazált \textbf{felhasználói átlagra}: gyrációs sugár, Shannon-entrópia és otthon--munkahely távolság. A \textbf{$k=4$} választását egyrészt a Pintér-féle tipológiához való illeszkedés, másrészt a \textbf{0{,}33-as si-luettszám} (sample $n=20\,000$, \texttt{random\_state}=42) indokolja: $k=3$-ra a magasabb si-luettszám mellett az \textit{Anchorite} és \textit{Commuter} klaszterek összemosódnak, $k=5$-re viszont az \textit{Explorer} csoport továbbiújatása értelmezhetetlen alklasztereket eredményez. A 0{,}33-as érték a CDR-mobilitási szakirodalomban szokásos tartományban van.
+A Pintér \cite{pinter2020artificial} disszertációjában leírt mobilitási archetípusok a YJMob100K adatokon is reprodukálhatók. Mind a 100~000 dataset1-beli felhasználóra K-Means algoritmust ($k=4$, \texttt{random\_state}=42) futtattam három log-transzformált és skálázott \textbf{felhasználói átlagra}: gyrációs sugár, Shannon-entrópia és otthon--munkahely távolság. A \textbf{$k=4$} választását egyrészt a Pintér-féle tipológiához való illeszkedés, másrészt a \textbf{0{,}33-as sziluett-szám} ($n=20\,000$ minta, \texttt{random\_state}=42) indokolja: $k=3$-ra a valamivel magasabb sziluett-szám mellett az \textit{Anchorite} és \textit{Commuter} klaszterek összemosódnak, $k=5$-re viszont az \textit{Explorer} csoport továbbosztása értelmezhetetlen alklasztereket eredményez. A 0{,}33-as érték a CDR-mobilitási szakirodalomban szokásos tartományba esik.
 
 \begin{figure}[H]
 \centering
@@ -142,11 +143,11 @@ A Pintér \cite{pinter2020artificial} disszertációjában leírt mobilitási ar
 \label{fig:seg01}
 \end{figure}
 
-A \autoref{tab:archetypes} foglalja össze a kapott három érdemi klaszter jellemzőit. A \textbf{negyedik klasztert (\textit{Explorer}, 4{,}2\%, $n=4\,193$ felhasználóval) a táblázatból kihagytuk}, mivel ehhez a csoporthoz olyan felhasználók tartoznak, akiknek a munkahely-detekció 0~m otthon--munkahely távolságot eredményezett (azaz a $t \in [16,28]$ időrések alatt is az otthoni cellában tartózkodtak). Ez elsősorban adatminőségi/mintavételezési műtermék, nem pedig valódi viselkedési típus, ezért a további értelmezésből kihagytuk. A három érdemi archetípus interpretációja:
+A \autoref{tab:archetypes} foglalja össze a kapott három érdemi klaszter jellemzőit. A \textbf{negyedik klasztert} (\textit{Explorer}, 4{,}2\%, $n=4\,193$ felhasználó) \textbf{a táblázatból kihagytam}, mivel ide olyan felhasználók kerültek, akiknél a munkahely-detekció 0~m otthon--munkahely távolságot eredményezett (azaz a $t \in [16,28]$ időrések alatt is az otthoni cellában tartózkodtak). Ez elsősorban adatminőségi/mintavételezési műtermék, nem pedig valódi viselkedési típus, ezért a további értelmezésből kihagytam. A három érdemi archetípus interpretációja:
 \begin{itemize}
-\item \textbf{Anchorite} (15{,}3\%) alacsony gyrációs sugár ($\approx$1{,}86~km), kis home--work távolság, valószínűleg helyhez kötött nyugdíjasok vagy otthon dolgozók.
-\item \textbf{Commuter} (45{,}0\%) közepes gyrációs sugár ($\approx$3{,}89~km), tipikus 5{,}5~km-es home--work távolsággal: a klasszikus városi ingázók.
-\item \textbf{Nomad} (35{,}5\%) magas gyrációs sugár ($\approx$8{,}17~km) és nagy home--work távolság ($\approx$14{,}40~km): nagy területet bejáró felhasználók (távingázók, sokat utazók).
+\item \textbf{Anchorite} (15{,}3\%): alacsony gyrációs sugár ($\approx$1{,}86~km), kis otthon--munkahely távolság, valószínűleg helyhez kötött nyugdíjasok vagy otthon dolgozók.
+\item \textbf{Commuter} (45{,}0\%): közepes gyrációs sugár ($\approx$3{,}89~km), tipikus 5{,}5~km-es otthon--munkahely távolsággal -- a klasszikus városi ingázók.
+\item \textbf{Nomad} (35{,}5\%): magas gyrációs sugár ($\approx$8{,}17~km) és nagy otthon--munkahely távolság ($\approx$14{,}40~km), nagy területet bejáró felhasználók (távingázók, sokat utazók).
 \end{itemize}
 
 \begin{table}[H]
@@ -164,7 +165,7 @@ Nomad     & 35\,450 & 35{,}5\% &  8\,173 & 14\,395 & 10{,}5 \\
 \end{tabular}
 \end{table}
 
-A klaszterek térbeli megoszlását a \autoref{fig:seg02} ábra szemlélteti Nagoya OpenStreetMap alaptérképén: a Nomad-felhasználók a peremkerületekben és vasútvonalak mentén, az Anchorite-ok pedig a sűrűbben lakott belvárosban koncentrálódnak ez a térbeli mintázat összhangban van Pintér és Felde \cite{pinter2021evaluating} szocioökonómiai gradiensről szóló eredményével.
+A klaszterek térbeli megoszlását a \autoref{fig:seg02} ábra szemlélteti Nagoya OpenStreetMap alaptérképén: a Nomad-felhasználók a peremkerületekben és vasútvonalak mentén, az Anchorite-ok pedig a sűrűbben lakott belvárosban koncentrálódnak -- ez a térbeli mintázat összhangban van Pintér és Felde \cite{pinter2021evaluating} szocioökonómiai gradiensről szóló eredményével.
 
 \begin{figure}[H]
 \centering
@@ -175,7 +176,7 @@ A klaszterek térbeli megoszlását a \autoref{fig:seg02} ábra szemlélteti Nag
 
 \subsubsection*{Archetípusok POI-affinitása}
 
-A klaszterek szemantikai érvényességének megalapozására a felhasználók otthoncellájára meghatároztuk a domináns POI-kategóriát (\texttt{cell\_poi\_cat} tábla \texttt{ARG\_MAX(POIcategory, POI\_count)} szerint, JOIN \texttt{poi\_categories}-zel), majd minden archetípusra kiszámítottuk a \textbf{lift-értéket}: a kategória részaránya az adott archetípuson belül, osztva a teljes mintabeli részaránnyal. A 96~211 felhasználó 98{,}2\%-ának otthoncellájához sikerült POI-kategóriát rendelni. A \autoref{tab:archetype_poi} az 1{,}05-nél magasabb lift-értékű kategóriákat mutatja archetípusonként, amelyek \textbf{statisztikailag felülreprezentáltak} az adott klaszterben.
+A klaszterek szemantikai érvényességének megalapozására a felhasználók otthoncellájára meghatároztam a domináns POI-kategóriát (a \texttt{cell\_poi\_cat} tábla \texttt{ARG\_MAX(POIcategory, POI\_count)} szerint, JOIN \texttt{poi\_categories}-zel), majd minden archetípusra kiszámítottam a \textbf{lift-értéket}: a kategória részaránya az adott archetípuson belül osztva a teljes mintabeli részaránnyal. Az elemzésbe a 100~000 felhasználóból 96~211-et tudtam bevonni (a hiányzó otthoncella vagy POI-besorolás miatt kiesett 3\,789 felhasználón kívül), és ezek 98{,}2\%-ának otthoncellájához sikerült POI-kategóriát rendelni. A \autoref{tab:archetype_poi} az 1{,}05-nél magasabb lift-értékű kategóriákat mutatja archetípusonként, amelyek \textbf{statisztikailag felülreprezentáltak} az adott klaszterben (az \textit{Explorer} csoport a teljesség kedvéért szerepel a táblázatban, a fő interpretációból a fent leírt műtermék-jelleg miatt kihagytam).
 
 \begin{table}[H]
 \centering
@@ -207,16 +208,16 @@ Nomad     & Bank                 & 1{,}25  & 1{,}08 \\
 
 A táblázat egy interpretálható \textbf{szocioökonómiai gradienst} rajzol meg:
 \begin{itemize}
-\item \textbf{Anchorite}-ok otthoncellája \textbf{12\%-kal gyakrabban tartalmaz idős gondozó otthont} és 7\%-kal gyakrabban kórházat, mint az átlag ami megegyezik az alacsony mobilitású, helyhez kötött idős vagy otthon dolgozó csoport hipotézisével.
-\item \textbf{Commuter}-ek POI-eloszlása lényegében azonos a teljes mintáéval (egyetlen kategória sem haladja meg az 1{,}05-ös lift-et). Ez nem hibás eredmény, hanem épp az osztaly definíció-szerű jellemzője: a Commuter-ek a város lakosságának ,,átlagos" tipust képviselik.
-\item \textbf{Explorer}-ek otthonai 41\%-kal gyakrabban esnek ruházati üzletek és 29\%-kal gyakrabban bankok közelébe városközponti, kereskedelmi-szolgáltatási jellegű lakosság.
-\item \textbf{Nomad}-ok otthonai \textbf{49\%-kal gyakrabban találhatók kikötői zónák közelében} és 15\%-kal gyakrabban japán éttermekkel sűrűn borított cellákban (ez utóbbi karakteresen a peremvárosi szórakozó-zonákra utal). Ez összhangban van Pintér és Felde \cite{pinter2021evaluating} szocioökonómiai gradiens-megfigyelésével: a magas mobilitású csoport a város peremterületén és logisztikai csomópontok közelében él.
+\item \textbf{Anchorite}-ok otthoncellája \textbf{12\%-kal gyakrabban tartalmaz idős gondozó otthont} és 7\%-kal gyakrabban kórházat, mint az átlag -- ez megegyezik az alacsony mobilitású, helyhez kötött idős vagy otthon dolgozó csoport hipotézisével.
+\item \textbf{Commuter}-ek POI-eloszlása lényegében azonos a teljes mintáéval (egyetlen kategória sem haladja meg az 1{,}05-ös liftet). Ez nem hibás eredmény, hanem éppen az osztály definíciószerű jellemzője: a Commuter-ek a város lakosságának ,,átlagos'' típusát képviselik.
+\item \textbf{Explorer}-ek otthonai 41\%-kal gyakrabban esnek ruházati üzletek és 29\%-kal gyakrabban bankok közelébe -- városközponti, kereskedelmi-szolgáltatási jellegű lakosság.
+\item \textbf{Nomad}-ok otthonai \textbf{49\%-kal gyakrabban találhatók kikötői zónák közelében} és 15\%-kal gyakrabban japán éttermekkel sűrűn borított cellákban (ez utóbbi karakteresen a peremvárosi szórakozózónákra utal). Ez összhangban van Pintér és Felde \cite{pinter2021evaluating} szocioökonómiai gradiens-megfigyelésével: a magas mobilitású csoport a város peremterületén és logisztikai csomópontok közelében él.
 \end{itemize}
 
 \subsection{Város szintű mobilitási események detektálása és nagoyai helyszín-azonosítás}
 \label{subsec:events}
 
-A Traag et al.\ \cite{traag2011social} által javasolt esemény-detektálási megközelítést a \texttt{11-events.ipynb} notebookban kettős mechanizmussal valósítottam meg: először minden \texttt{(cella, $d \bmod 7$, \,óra)} hármasra robusztus baseline-t (medián + MAD) számítottam a teljes 75 napos mobility1 cellaóra-aggregaciójan; majd az ettől szignifikánsan eltérő cell-órákat (anomália bin) DBSCAN-nel összefüggő térbeli-időbeli klaszterekbe (\textbf{események}) szerveztem. Így 131 egyedi mobilitási esemény adódott a normál időszak alatt; ezek 92\%-a kis (50--199 felhasználó csúcson) és 8\%-a közepes (200--499 felhasználó) méretű esemény.
+A Traag et al.\ \cite{traag2011social} által javasolt esemény-detektálási megközelítést a \texttt{11-events.ipynb} notebookban kétlépéses módszerrel valósítottam meg: először minden \texttt{(cella, $d \bmod 7$, óra)} hármasra robusztus baseline-t (medián + MAD) számítottam a teljes 75 napos mobility1 cellaóra-aggregátumán; majd az ettől szignifikánsan eltérő cell-órákat (anomália-binek) DBSCAN-nel összefüggő térbeli-időbeli klaszterekbe (\textbf{események}) szerveztem. Így 131 egyedi mobilitási eseményt kaptam a normál időszak alatt; ezek 92\%-a kis (50--199 csúcs-felhasználó) és 8\%-a közepes (200--499 csúcs-felhasználó) méretű.
 
 \begin{figure}[H]
 \centering
@@ -225,46 +226,25 @@ A Traag et al.\ \cite{traag2011social} által javasolt esemény-detektálási me
 \label{fig:events01}
 \end{figure}
 
-\subsubsection*{A 10 legnagyobb esemény és Nagoyai helyszín-azonosítás}
+\subsubsection*{Érdekes helyszínek és nagoyai azonosítás}
 
-Az események csúcs-felhasználószám szerinti sorrendben első tíz tételét és azok WGS84 koordinátáit a \texttt{src/geo.py} segítségével a Yabe et al.\ \cite{yabe2023metropolitan} grid-georeferenciájához rendelve OpenStreetMap nominátum-keresővel valós nagoyai helyszínekkel azonosítottam. A \autoref{tab:top_events} az így kapott eredményt mutatja.
+A 131 detektált esemény csúcsainak WGS84 koordinátáit a \texttt{src/geo.py} segítségével a Yabe et al.\ \cite{yabe2023metropolitan} grid-georeferenciájához rendeltem, majd OpenStreetMap nominátum-keresővel valós nagoyai helyszínekhez kötöttem. Az alábbiakban néhány karakteres példát emelek ki, a térbeli elhelyezkedést pedig a \autoref{fig:events03} mutatja:
 
-\begin{table}[H]
-\centering
-\caption{A legnagyobb városi mobilitási események (mobility1, $n=131$ esemény, csúcs-felhasználószám szerint). Saját számítás, helyszín-azonosítás OSM nominátum alapján.}
-\label{tab:top_events}
-\small
-\begin{tabular}{l c r r l l}
-\hline
-\textbf{Esemény} & \textbf{Nap} & \textbf{Hét napja} & \textbf{Csúcs} & \textbf{Domináns POI} & \textbf{Helyszín (Nagoya)} \\
-\hline
-E0123 & 69 & szombat & 370 & Japanese restaurant   & Nagoya Dome környéke \\
-E0125 & 70 & vasárnap & 308 & Western restaurant    & Tenpaku-ku, Hara állomás \\
-E0008 &  4 & csütörtök & 299 & Japanese restaurant  & Nagoya Dome környéke \\
-E0020 & 18 & csütörtök & 287 & Japanese restaurant  & Nagoya Dome környéke \\
-E0007 &  4 & csütörtök & 263 & Japanese restaurant  & Nagoya Dome környéke \\
-E0121 & 67 & csütörtök & 256 & Japanese restaurant  & Nagoya Dome környéke \\
-E0002 &  3 & szerda & 248    & Japanese restaurant  & Nagoya Dome környéke \\
-E0025 & 20 & szombat & 227   & Sports/Recreation    & Paloma Mizuho Stadium \\
-E0019 & 18 & csütörtök & 213 & Japanese restaurant  & Nagoya Dome környéke \\
-E0035 & 27 & csütörtök & 209 & Japanese restaurant  & Nagoya Dome környéke \\
-\hline
-\end{tabular}
-\end{table}
+\begin{itemize}
+\item \textbf{Nagoya Dome (Vantelin Dome) környéke} a 35{,}186\textsuperscript{$\circ$}N, 136{,}947\textsuperscript{$\circ$}E koordinátán a 75 napon belül \textbf{tíz külön eseményt} produkált, dominánsan csütörtöki napokon, \textit{Japanese restaurant} POI-val. Ez a Chunichi Dragons baseball-csapat hazai mérkőzéseivel és koncertekkel konzisztens.
+\item \textbf{Paloma Mizuho Stadium} (35{,}121\textsuperscript{$\circ$}N, 136{,}942\textsuperscript{$\circ$}E) két szombati eseménnyel jelent meg \textit{Sports/Recreation} POI-val ez a Nagoya Grampus labdarúgóklub meccsnapjaira illeszkedik.
+\item \textbf{Csúszdapark / vízipart} egy különálló vasárnapi esemény (E0125, $d=70$, 308 csúcs-felhasználó) \textit{Western restaurant} POI-val, amely a térképen jól elkülönül a városi gócoktól tipikus szezonális szabadidős csúcs.
+\item \textbf{Toyota City vasúti csomópont} (35{,}086\textsuperscript{$\circ$}N, 137{,}172\textsuperscript{$\circ$}E) három, 154--173 felhasználós eseménnyel \textit{Transit Station} POI-val vélhetően vállalati vagy közlekedési csúcsforgalmi rendezvények.
+\end{itemize}
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.95\textwidth]{img/events_03_map.png}
-\caption{A 10 legnagyobb mobilitási esemény térbeli elhelyezkedése Nagoya OSM-térképén. Saját számítás.}
+\caption{A detektált mobilitási események térbeli elhelyezkedése Nagoya OSM-térképén. Saját számítás.}
 \label{fig:events03}
 \end{figure}
 
-A táblázatból a következő, a szakirodalom (Traag et al.\ \cite{traag2011social}) jóslatát visszaigazoló mintázatok rajzolódnak ki:
-\begin{itemize}
-\item \textbf{Nagoya Dome (Vantelin Dome) dominanciája.} A 35{,}186\textsuperscript{$\circ$}N, 136{,}947\textsuperscript{$\circ$}E koordinátákkal azonosított cella körüli klaszter \textbf{a 131 detektált esemény közül 10-et adott} (a top-10 nyolcat), ami a Chunichi Dragons baseball csapat hazai mérkőzéseivel és koncertekkel konzisztens (a domináns POI \textit{Japanese restaurant} a stadion melletti étterem-zónát fedi le).
-\item \textbf{Paloma Mizuho Stadium hétvégi sport-eseményei.} A 35{,}121\textsuperscript{$\circ$}N, 136{,}942\textsuperscript{$\circ$}E koordinátán két kiugró eseményt detektáltunk (E0025, E0038), \textbf{mindkettő szombati napon}, \textit{Sports/Recreation} domináns POI-val ez a Nagoya Grampus labdarúgóklub hazai meccsnapjaival konzisztens.
-\item \textbf{Toyota City vasúti csomópont.} A 35{,}086\textsuperscript{$\circ$}N, 137{,}172\textsuperscript{$\circ$}E koordinátán három, 154--173 felhasználós esemény (E0018, E0023, E0092) jelent meg \textit{Transit Station} domináns POI-val ezek a Toyota Mototatsu pályaudvar környékén tartott, vélhetően vállalati vagy közlekedési csúcsforgalmi események.
-\end{itemize}
+A módszer értéke abban áll, hogy a felsorolt helyszínek \textbf{kizárólag a CDR-jellegű ping-adatok térbeli-időbeli mintázatából}, külső esemény-kalendárium, jegyértékesítési vagy közösségimédia-forrás bevonása nélkül azonosíthatók. A klasszikus aggregált statisztikák (napi összesítés, heti ciklus) elfedik az olyan, időben pontszerű, de tömeges humán koncentrációkat, mint egy stadionmeccs vagy egy szezonális szabadidős csúcs; a baseline + DBSCAN megközelítés viszont éppen ezeket emeli ki, és így a Traag et al.\ \cite{traag2011social} által javasolt esemény-detektálási elv a YJMob100K-n is reprodukálhatónak bizonyul.
 
 \subsubsection*{Visszatérő heti minták}
 
@@ -279,7 +259,7 @@ A 131 esemény közül \textbf{8 visszatérő} (azaz ugyanazon a koordinátán l
 
 \subsubsection*{Vészhelyzeti időszak: az események elnémulása}
 
-Ugyanezt a robust baseline + DBSCAN módszertant futtatva a mobility2 vészhelyzeti időszakára ($d \geq 60$, 25~000 felhasználó, 15 nap) \textbf{mindössze 3 kis méretű (X0000--X0002) eseményt detektáltunk}, mindhárom \textit{Wine Bar / Bar} domináns POI-jű cellában, vasárnapi 8h körüli csúkkal. Ez a megfigyelés független megerősítést ad a \ref{subsec:anomaly} alfejezetben tárgyalt \textbf{kontrakciós paradoxonnak}: a vészhelyzet alatt nemcsak az egyéni mobilitás-jellemzők szűkültek be, hanem a kollektív, város szintű tömegrendezvény-mintázatok is gyakorlatilag elnémultak pontosan az a kettős viselkedés (egyéni és kollektív kontrakció együtt), amit a Pintér és Felde \cite{pinter2022awakening} ,,ébredő város''-elemzése is jelez a vészhelyzeti időszakra.
+Ugyanezt a robusztus baseline + DBSCAN módszert futtatva a mobility2 vészhelyzeti időszakára ($d \geq 60$, 25~000 felhasználó, 15 nap) \textbf{mindössze 3 kis méretű (X0000--X0002) eseményt detektáltam}, mindhárom \textit{Wine Bar / Bar} domináns POI-jú cellában, vasárnap 8h körüli csúccsal. Ez a megfigyelés független megerősítést ad a \ref{subsec:anomaly} alfejezetben tárgyalt \textbf{kontrakciós paradoxonnak}: a vészhelyzet alatt nemcsak az egyéni mobilitásjellemzők szűkültek be, hanem a kollektív, város szintű tömegrendezvény-mintázatok is gyakorlatilag elnémultak. Pontosan ez a kettős viselkedés (egyéni és kollektív kontrakció együtt) az, amit Pintér és Felde \cite{pinter2022awakening} ,,ébredő város''-elemzése is jelez a vészhelyzeti időszakra.
 
 \subsection{Összegző áttekintés}
 \label{subsec:eredmenyek_osszegzo}
@@ -295,19 +275,19 @@ A \autoref{tab:eredmenyek_osszegzo} a fejezetben tárgyalt minden alfejezethez h
 \hline
 \textbf{Alfejezet} & \textbf{Reprodukált irodalmi állítás} & \textbf{Új megfigyelés a YJMob100K-n} \\
 \hline
-\ref{subsec:eloszlasok} Eloszlások & Gonzalez et al.\ \cite{gonzalez2008understanding}: a mobilitási metrikák erős jobbra ferdült eloszlást mutatnak. & A YJMob100K medián gyrációs sugara $\approx$3{,}7~km, vastag farokkal egészen 30~km-ig. \\
+\ref{subsec:eloszlasok} Eloszlások & González et al.\ \cite{gonzalez2008understanding}: a mobilitási metrikák erősen jobbra ferdült eloszlást mutatnak. & A YJMob100K medián gyrációs sugara $\approx$3{,}4~km, vastag farokkal jóval az átlag (5{,}5~km) fölé nyúlva. \\
 \hline
-\ref{subsec:dow} Heti ciklus & Pintér és Felde \cite{pinter2022awakening}: a kollektív mobilitás erős heti ciklust mutat. & Konkrét számszerűsítés: hétvégén $-15{,}7\%$ aktivitás, $-20{,}4\%$ médián gyrációs sugár, $-7{,}4\%$ entrópia. \\
+\ref{subsec:dow} Heti ciklus & Pintér és Felde \cite{pinter2022awakening}: a kollektív mobilitás erős heti ciklust mutat. & Konkrét számszerűsítés: hétvégén $-15{,}7\%$ aktivitás, $-20{,}4\%$ medián gyrációs sugár, $-6{,}2\%$ medián entrópia. \\
 \hline
-\ref{subsec:poi_zonak} POI-zónák & Yabe et al.\ \cite{yabe2023metropolitan}: a POI-tipus determinálja a cella aktivitás-profilját. & Lakó és kereskedelmi zónák napi $\approx$1{,}65×, ipari zónák $\approx$3×, közlekedési zónák $\approx$2× csúcsarány. \\
+\ref{subsec:poi_zonak} POI-zónák & Yabe et al.\ \cite{yabe2023metropolitan}: a POI-típus meghatározza a cella aktivitásprofilját. & Vészhelyzetben a szabadidős zónák aktivitása csökkent a legnagyobb mértékben, az ipari zónák szintje gyakorlatilag változatlan maradt. \\
 \hline
-\ref{subsec:anomaly} Anomáliadetekció & Traag et al.\ \cite{traag2011social}: vészhelyzetekben atipikus felhasználói csoport detektálható. & Kontrakciós paradoxon: a vészhelyzet alatt az ,,anomális" 0{,}5\%-nak \textbf{nagyobb}, nem kisebb a gyrációs sugara (4{,}5×). \\
+\ref{subsec:anomaly} Anomáliadetekció & Traag et al.\ \cite{traag2011social}: vészhelyzetekben atipikus felhasználói csoport detektálható. & Kontrakciós paradoxon: a vészhelyzet alatt az anomáliaráta $7\% \to 5\%$-ra csökkent, miközben az így detektált anomális csoport medián gyrációs sugara 1{,}81×, otthon--munkahely távolsága 2{,}80× a normálénak. \\
 \hline
-\ref{subsec:circadian} Cirkadián & Pintér és Felde \cite{pinter2022awakening}: ,,ébredő város" jelenség reggeli aktivitás-felfutás 50\% küszöbbel mérhető. & A YJMob100K-n $t_{\mathrm{wake}}$=06:23 normál, 06:08 vészhelyzet alatt; az éjszakai aktivitás $+53\%$. \\
+\ref{subsec:circadian} Cirkadián & Pintér és Felde \cite{pinter2022awakening}: ,,ébredő város'' jelenség, reggeli aktivitásfelfutás 50\% küszöbbel mérhető. & A YJMob100K-n $t_{\mathrm{wake}}$=06:23 normál, 06:08 vészhelyzet alatt; az éjszakai aktivitás $+53\%$. \\
 \hline
-\ref{subsec:archetypes} Archetípusok & Pintér \cite{pinter2020artificial}: 3--4 viselkedési archetípus K-Means-szel; Pintér és Felde \cite{pinter2021evaluating}: szocioökonómiai gradiens. & POI-affinitás-LIFT módszertan: Anchorite +12\% idős otthon, Nomad +49\% kikötő mérhető szocio-térbeli gradiens. \\
+\ref{subsec:archetypes} Archetípusok & Pintér \cite{pinter2020artificial}: 3--4 viselkedési archetípus K-Means-szel; Pintér és Felde \cite{pinter2021evaluating}: szocioökonómiai gradiens. & POI-affinitás lift-módszer: Anchorite +12\% idős gondozó otthon, Nomad +49\% kikötő -- mérhető szocio-térbeli gradiens. \\
 \hline
-\ref{subsec:events} Események & Traag et al.\ \cite{traag2011social}: kollektív rendezvények kiugróan magasabb aktivitásként megjelennek. & 131 esemény, 10/131 a Nagoya Dome környékén, 2 a Mizuho Stadiumnál; vészhelyzet alatt csak 3 esemény. \\
+\ref{subsec:events} Események & Traag et al.\ \cite{traag2011social}: kollektív rendezvények kiugróan magasabb aktivitásként megjelennek. & 131 esemény, 10/131 a Nagoya Dome környékén, 2 a Mizuho Stadiumnál; vészhelyzet alatt mindössze 3 esemény. \\
 \hline
 \end{tabular}
 \end{table}
