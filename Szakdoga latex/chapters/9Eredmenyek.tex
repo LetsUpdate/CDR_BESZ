@@ -226,36 +226,36 @@ A Traag et al.\ \cite{traag2011social} által javasolt esemény-detektálási me
 \label{fig:events01}
 \end{figure}
 
-\subsubsection*{Érdekes helyszínek és nagoyai azonosítás}
+\subsubsection*{Visszatérő vs.\ alkalmi események szétválasztása}
 
-A 131 detektált esemény csúcsainak WGS84 koordinátáit a \texttt{src/geo.py} segítségével a Yabe et al.\ \cite{yabe2023metropolitan} grid-georeferenciájához rendeltem, majd OpenStreetMap nominátum-keresővel valós nagoyai helyszínekhez kötöttem. Az alábbiakban néhány karakteres példát emelek ki, a térbeli elhelyezkedést pedig a \autoref{fig:events03} mutatja:
+A 131 detektált esemény között mind \textbf{visszatérő}, mind \textbf{alkalmi (egyedi)} mintázatok előfordulnak. Egy eseményt akkor minősítek \textbf{visszatérőnek}, ha ugyanaz az $(x, y, \text{óra}, d \bmod 7)$ koordináta-időbeli négyes \textbf{kettőnél több különböző héten} is detektálódott (\texttt{flag\_recurrent} függvény, \texttt{RECURRENCE\_W=2} küszöb). Az így kapott \textbf{8 visszatérő esemény} dominánsan \textbf{péntek (5/8) és szombat (3/8)} napokra esik, tipikus POI-mixe \textit{Western restaurant} és \textit{Sports/Recreation}~-- ezek a heti rendezvényekkel (sportmérkőzés, koncert, közösségi étkezés) konzisztensek és a hét végéhez kötöttek.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{img/events_02_calendar.png}
+\caption{A detektált események napi eloszlása a 75 napos megfigyelési időszakban (mobility1). A Nagoya Dome-hoz köthető csütörtöki klaszter (lila pöttyök) jól láthatóan ritmusos. Saját számítás.}
+\label{fig:events02}
+\end{figure}
+
+\subsubsection*{Alkalmi események a térképen és nagoyai azonosítás}
+
+A 8 visszatérő esemény kiszűrése után fennmaradó \textbf{123 alkalmi (nem visszatérő) esemény közül a 10 legnagyobbat} (csúcs-felhasználószám szerint) a \texttt{src/geo.py} segítségével a Yabe et al.\ \cite{yabe2023metropolitan} grid-georeferenciájához rendeltem, majd OpenStreetMap nominátum-keresővel valós nagoyai helyszínekhez kötöttem. A \autoref{fig:events03} így kifejezetten azt mutatja, \textbf{hol tömörültek emberek olyan események miatt, amelyek nem rendszeresen, ugyanazon a hetinapon és órában ismétlődnek}. Néhány karakteres példa:
 
 \begin{itemize}
-\item \textbf{Nagoya Dome (Vantelin Dome) környéke} a 35{,}186\textsuperscript{$\circ$}N, 136{,}947\textsuperscript{$\circ$}E koordinátán a 75 napon belül \textbf{tíz külön eseményt} produkált, dominánsan csütörtöki napokon, \textit{Japanese restaurant} POI-val. Ez a Chunichi Dragons baseball-csapat hazai mérkőzéseivel és koncertekkel konzisztens.
-\item \textbf{Paloma Mizuho Stadium} (35{,}121\textsuperscript{$\circ$}N, 136{,}942\textsuperscript{$\circ$}E) két szombati eseménnyel jelent meg \textit{Sports/Recreation} POI-val ez a Nagoya Grampus labdarúgóklub meccsnapjaira illeszkedik.
-\item \textbf{Csúszdapark / vízipart} egy különálló vasárnapi esemény (E0125, $d=70$, 308 csúcs-felhasználó) \textit{Western restaurant} POI-val, amely a térképen jól elkülönül a városi gócoktól tipikus szezonális szabadidős csúcs.
-\item \textbf{Toyota City vasúti csomópont} (35{,}086\textsuperscript{$\circ$}N, 137{,}172\textsuperscript{$\circ$}E) három, 154--173 felhasználós eseménnyel \textit{Transit Station} POI-val vélhetően vállalati vagy közlekedési csúcsforgalmi rendezvények.
+\item \textbf{Nagoya Dome (Vantelin Dome) környéke} a 35{,}186\textsuperscript{$\circ$}N, 136{,}947\textsuperscript{$\circ$}E koordinátán több alkalmi csúccsal jelent meg, dominánsan csütörtöki napokon, \textit{Japanese restaurant} POI-val. Ezek a Chunichi Dragons baseball-csapat hazai mérkőzéseivel és koncertekkel konzisztensek -- mivel a meccs- és koncertidőpontok hétről hétre eltérő órára eshetnek, az $(x,y,\text{óra},d\!\bmod\!7)$-szintű visszatérőségi kritériumot nem merítik ki, és így alkalmi eseményként detektálódnak.
+\item \textbf{Paloma Mizuho Stadium} (35{,}121\textsuperscript{$\circ$}N, 136{,}942\textsuperscript{$\circ$}E) két szombati eseménnyel jelent meg \textit{Sports/Recreation} POI-val~-- a Nagoya Grampus labdarúgóklub egy-egy meccsnapja.
+\item \textbf{Csúszdapark / vízipart} egy különálló vasárnapi esemény (E0125, $d=70$, 308 csúcs-felhasználó) \textit{Western restaurant} POI-val, amely a térképen jól elkülönül a városi gócoktól~-- tipikus szezonális szabadidős csúcs.
+\item \textbf{Toyota City vasúti csomópont} (35{,}086\textsuperscript{$\circ$}N, 137{,}172\textsuperscript{$\circ$}E) három, 154--173 felhasználós eseménnyel \textit{Transit Station} POI-val~-- vélhetően vállalati vagy közlekedési csúcsforgalmi rendezvények.
 \end{itemize}
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.95\textwidth]{img/events_03_map.png}
-\caption{A detektált mobilitási események térbeli elhelyezkedése Nagoya OSM-térképén. Saját számítás.}
+\caption{A 10 legnagyobb \emph{alkalmi} (nem visszatérő) mobilitási esemény térbeli elhelyezkedése Nagoya OSM-térképén. A heti $(x,y,\text{óra},d\!\bmod\!7)$-rendszerességű események (8 db) ki vannak szűrve. Saját számítás.}
 \label{fig:events03}
 \end{figure}
 
 A módszer értéke abban áll, hogy a felsorolt helyszínek \textbf{kizárólag a CDR-jellegű ping-adatok térbeli-időbeli mintázatából}, külső esemény-kalendárium, jegyértékesítési vagy közösségimédia-forrás bevonása nélkül azonosíthatók. A klasszikus aggregált statisztikák (napi összesítés, heti ciklus) elfedik az olyan, időben pontszerű, de tömeges humán koncentrációkat, mint egy stadionmeccs vagy egy szezonális szabadidős csúcs; a baseline + DBSCAN megközelítés viszont éppen ezeket emeli ki, és így a Traag et al.\ \cite{traag2011social} által javasolt esemény-detektálási elv a YJMob100K-n is reprodukálhatónak bizonyul.
-
-\subsubsection*{Visszatérő heti minták}
-
-A 131 esemény közül \textbf{8 visszatérő} (azaz ugyanazon a koordinátán legalább két különböző héten ugyanazon a hétnapon); ezek dominánsan \textbf{péntek (5/8) és szombat (3/8)}, a tipikus POI-mix \textit{Western restaurant} és \textit{Sports/Recreation}. Ez egybevág a kulturális gyakorlattal, miszerint a heti rendezvények (sportmérkőzés, koncert, közösségi étkezés) jellemzően a hét végéhez kötöttek.
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.95\textwidth]{img/events_02_calendar.png}
-\caption{A detektált események napi eloszlása a 75 napos megfigyelési időszakban (mobility1). A Nagoya Dome-hoz köthető visszatérő csütörtöki klaszter (lila pöttyök) jól láthatóan ritmusos. Saját számítás.}
-\label{fig:events02}
-\end{figure}
 
 \subsubsection*{Vészhelyzeti időszak: az események elnémulása}
 
@@ -287,7 +287,7 @@ A \autoref{tab:eredmenyek_osszegzo} a fejezetben tárgyalt minden alfejezethez h
 \hline
 \ref{subsec:archetypes} Archetípusok & Pintér \cite{pinter2020artificial}: 3--4 viselkedési archetípus K-Means-szel; Pintér és Felde \cite{pinter2021evaluating}: szocioökonómiai gradiens. & POI-affinitás lift-módszer: Anchorite +12\% idős gondozó otthon, Nomad +49\% kikötő -- mérhető szocio-térbeli gradiens. \\
 \hline
-\ref{subsec:events} Események & Traag et al.\ \cite{traag2011social}: kollektív rendezvények kiugróan magasabb aktivitásként megjelennek. & 131 esemény, 10/131 a Nagoya Dome környékén, 2 a Mizuho Stadiumnál; vészhelyzet alatt mindössze 3 esemény. \\
+\ref{subsec:events} Események & Traag et al.\ \cite{traag2011social}: kollektív rendezvények kiugróan magasabb aktivitásként megjelennek. & 131 esemény (ebből 8 visszatérő, 123 alkalmi); az alkalmi top-10 döntően a Nagoya Dome környékén, 2 a Mizuho Stadiumnál; vészhelyzet alatt mindössze 3 esemény. \\
 \hline
 \end{tabular}
 \end{table}
