@@ -125,7 +125,7 @@ A \textbf{dimenzió táblák}:
     \item \textbf{dim\_user} -- felhasználói összefoglaló: az adatkészlet azonosítója, becsült otthon- és munkahely-cella, otthon--munkahely távolság. Természetes kulcs: \((\texttt{uid}, \texttt{dataset})\) kompozit kulcs, mivel a két adatkészlet független kohorsz (lásd 5.3.\ szakasz). 121\,607 sor (a 125\,000 felhasználóból ennyihez sikerült stabil otthoncellát hozzárendelni). A felhasználói archetípus-klaszterezés (lásd 9.6.\ szakasz) eredménye nem a dimenzió-táblában, hanem külön \texttt{output/user\_archetypes.csv} fájlban tárolódik, hogy az analitikai modellfuttatások függetlenek maradjanak az adatraktártól.
 \end{itemize}
 
-\noindent A származtatott mobilitási metrikákat két aggregált tábla tárolja (\texttt{user\discretionary{\_}{}{\_}daily\discretionary{\_}{}{\_}features1} és \texttt{user\discretionary{\_}{}{\_}daily\discretionary{\_}{}{\_}features2}), amelyeket a 4.\ fejezetben bemutatott képletek alapján SQL-ben számítok ki. Ezek felhasználónként és naponként tartalmazzák a gyrációs sugarat, a Shannon-entrópiát, a lokációs diverzitást, a becsült otthon- és munkahely-cellát, valamint az otthon--munkahely távolságot méterben.
+\noindent A származtatott mobilitási metrikákat két aggregált tábla tárolja --- ezek neve \texttt{user\_daily\_features1}, illetve \texttt{user\_daily\_features2} ---, amelyeket a 4.\ fejezetben bemutatott képletek alapján SQL-ben számítok ki. Ezek felhasználónként és naponként tartalmazzák a gyrációs sugarat, a Shannon-entrópiát, a lokációs diverzitást, a becsült otthon- és munkahely-cellát, valamint az otthon--munkahely távolságot méterben.
 
 \subsection{Feldolgozási folyamat (pipeline)}
 
