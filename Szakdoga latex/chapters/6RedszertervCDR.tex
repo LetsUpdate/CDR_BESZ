@@ -57,7 +57,7 @@ A rendszer négy fő rétegből áll (\autoref{fig:arch}):
 \begin{enumerate}
     \item \textbf{Adatforrás réteg.} A nyers CSV fájlok (YJMob100K dataset1, dataset2) és a kiegészítő adatok (POI kategóriák). Ezeket a DuckDB \texttt{read\_csv} streaming olvasója dolgozza fel, tehát a teljes CSV soha nem kerül egyben a memóriába.
 
-    \item \textbf{Perzisztens tároló (DuckDB).} A betöltött adatok DuckDB táblákba kerülnek, amelyek oszlopos formátumban, tömörítve tárolódnak egyetlen fájlban (\texttt{mobility.duckdb}). Ez egyben a Data Warehouse szerepet is betölti, mivel a dimenziós táblákat is itt hozom létre.
+    \item \textbf{Perzisztens tároló (DuckDB).} A betöltött adatok DuckDB táblákba kerülnek, amelyek oszlopos formátumban,  tömörítve tárolódnak a (\texttt{mobility.duckdb}) fájlban. Ez egyben a Data Warehouse szerepet is betölti, mivel a dimenziós táblákat is itt hozom létre.
 
     \item \textbf{Analitikai réteg.} A mobilitási metrikákat SQL CTE-láncokon (Common Table Expression) keresztül számítom ki a DuckDB-ben, majd az eredményeket Parquet fájlokba is exportálom. Az anomáliadetekciót a scikit-learn végzi Python-ban, a DuckDB-ből kiolvasott feature mátrixon.
 
@@ -125,7 +125,7 @@ A \textbf{dimenzió táblák}:
     \item \textbf{dim\_user} -- felhasználói összefoglaló: az adatkészlet azonosítója, becsült otthon- és munkahely-cella, otthon--munkahely távolság. Természetes kulcs: \((\texttt{uid}, \texttt{dataset})\) kompozit kulcs, mivel a két adatkészlet független kohorsz (lásd 5.3.\ szakasz). 121\,607 sor (a 125\,000 felhasználóból ennyihez sikerült stabil otthoncellát hozzárendelni). A felhasználói archetípus-klaszterezés (lásd 9.6.\ szakasz) eredménye nem a dimenzió-táblában, hanem külön \texttt{output/user\_archetypes.csv} fájlban tárolódik, hogy az analitikai modellfuttatások függetlenek maradjanak az adatraktártól.
 \end{itemize}
 
-\noindent A származtatott mobilitási metrikákat két aggregált tábla tárolja --- ezek neve \texttt{user\_daily\_features1}, illetve \texttt{user\_daily\_features2} ---, amelyeket a 4.\ fejezetben bemutatott képletek alapján SQL-ben számítok ki. Ezek felhasználónként és naponként tartalmazzák a gyrációs sugarat, a Shannon-entrópiát, a lokációs diverzitást, a becsült otthon- és munkahely-cellát, valamint az otthon--munkahely távolságot méterben.
+\noindent A származtatott mobilitási metrikákat két aggregált tábla \texttt{user\_daily\_features1}, illetve \texttt{user\_daily\_features2} tárolja, amelyeket a 4.\ fejezetben bemutatott képletek alapján SQL-ben számítok ki. Ezek felhasználónként és naponként tartalmazzák a gyrációs sugarat, a Shannon-entrópiát, a lokációs diverzitást, a becsült otthon- és munkahely-cellát, valamint az otthon--munkahely távolságot méterben.
 
 \subsection{Feldolgozási folyamat (pipeline)}
 
