@@ -34,6 +34,7 @@ _minted-*/
 # PDF output (keep source, not build artifacts)
 # Uncomment below if you want to ignore all PDFs:
 # *.pdf
+Szakdoga\ latex/main.pdf
 
 # OS artifacts
 .DS_Store
