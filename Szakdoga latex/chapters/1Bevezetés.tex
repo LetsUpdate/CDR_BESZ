@@ -1,17 +1,12 @@
 % !TEX root = ../main.tex
 \subsection{Motiváció}
 
- Ahogy az okostelefonok mindennapjaink részévé váltak, egyre világosabb lett számomra, hogy ezek a láthatatlan adatmorzsák nem csupán műszaki érdekességek: viselkedési mintázatokat, útvonalakat, szokásokat és döntéseket rajzolnak ki rólunk, sokszor pontosabban, mint ahogyan mi magunk is ismernénk saját szokásainkat.
+Az okostelefonok mindennapjaink részévé válásával a mobilhálózatban keletkező cellainformációk -- viselkedési mintázatokat, útvonalakat és szokásokat rajzolnak ki rólunk.
 
 \enquote{\textit{The continuous communication between a device and the Mobile Phone Network leaves traces… the Mobile Phone Network can ‘sense’ our movements.}}%
 \cite{pinter2021evaluating}
 
-Mérnökinformatikusként  izgalmasnak találtam, hogy egy olyan egyszerűnek tűnő adatforrás, mint a Call Detail Record (CDR) vagyis a mobilhálózat működése során keletkező cellainformáció, milyen mély következtetésekre ad lehetőséget. A CDR-ben rögzített időbélyegek, cellaváltások és aktivitások első ránézésre technikai részletek, mégis képesek feltárni az emberi mobilitás szabályszerűségeit.
-
-%A személyes motivációm ennél is tovább mutat: szerettem volna megérteni, hogyan építenek a nagy rendszerek vállalatok, kormányzati szervek, szolgáltatók profilt rólunk az adataink alapján, és hogyan képesek akár finom, akár látens módon befolyásolni viselkedésünket.
-
-E dolgozat megírását tehát az a kíváncsiság indította el, hogy megértsem:
-hogyan lehet a város és benne mi magunk digitális lenyomataiból értelmezhető, mérhető, modellezhető mobilitási jellemzőket nyerni, és hogyan építhetők ilyen adatokból olyan rendszerek, amelyek a várostervezés, a közlekedési analitika vagy épp a viselkedéskutatás számára hasznosak lehetnek.
+A Call Detail Record (CDR) látszólag egyszerű adatforrás: időbélyegek, cellaváltások, aktivitások. Mégis alkalmas az emberi mobilitás szabályszerűségeinek feltárására, így értékes alap a várostervezés, a közlekedési analitika és a viselkedéskutatás számára.
 
 %\begin{figure}[H]
  %   \centering
@@ -33,27 +28,19 @@ hogyan lehet a város és benne mi magunk digitális lenyomataiból értelmezhet
 \subsection{A dolgozat célkitűzései}
 \label{subsec:goals}
 
-A dolgozat célja egy olyan rendszer megtervezése és teljes körű implementálása, amely egy nyílt forráskódú CDR-adathalmazon képes felhasználói szintű mobilitási mintázatokat feltárni, és az eredményeket térinformatikai eszközökkel megjeleníteni. Ezt az átfogó célt az alábbi részcélokra bontom:
+A dolgozat célja egy olyan rendszer megtervezése és teljes körű implementálása, amely egy nyílt forráskódú CDR-adathalmazon felhasználói szintű mobilitási mintázatokat tár fel és térinformatikai eszközökkel jelenít meg. Részcélok:
 
 \begin{enumerate}
-    \item \textbf{Szakirodalmi megalapozás.} Áttekinteni a CDR-feldolgozás bevett informatikai megoldásait, valamint a mobilitási metrikák (\textit{Radius of Gyration}, entrópia, \textit{trajectory}-mutatók) számítási eljárásait.
-
-    \item \textbf{Adatkészlet bemutatása.} Részletesen ismertetni az YJMob100K CDR-adathalmaz szerkezetét, a baseline és a vészhelyzeti részkészletek viszonyát, valamint a kísérő POI-fájlok szerepét.
-
-    \item \textbf{Rendszerterv kialakítása.} Megtervezni egy korlátozott (egyetlen gépes, 16~GB~RAM) hardverkörnyezetben is hatékonyan futó adatfeldolgozó architektúrát, amely képes 141~millió rekord kezelésére.
-
-    \item \textbf{ETL-pipeline implementálása.} Megvalósítani a teljes feldolgozási láncot az adatbetöltéstől a felhasználónkénti, naponkénti mobilitási metrikák kiszámításáig, csillagsémás adattárolással.
-
-    \item \textbf{Anomáliadetekció.} Felügyelet nélküli módszerrel azonosítani a vészhelyzeti időszak rendellenes viselkedési mintázatait, és az eredményeket összevetni a normál (\textit{baseline}) időszakkal.
-
-    \item \textbf{GIS-alapú megjelenítés.} A rácskoordinátákat georeferálni, és a származtatott mutatókat OpenStreetMap alaptérképen megjeleníteni.
-
-    \item \textbf{Eredmények kiértékelése két pillér mentén.} A számított metrikákat és anomáliákat egységes vezérfonalra fűzni: \textbf{(A)~az egyén tipikus városhasználata} (K-Means archetípusok, POI-affinitás, helyszín-azonosított rendezvények) és \textbf{(B)~a kollektív viselkedés rendkívüli megzavarása} (Isolation Forest kontrakciós paradoxon, ,,ébredő város'' eltolódása, város szintű események elnémulása), majd az így kapott képet a CDR-szakirodalom megfigyeléseivel (Gonz\'alez \cite{gonzalez2008understanding}, Pintér és Felde \cite{pinter2021evaluating, pinter2022awakening}, Traag et al.\ \cite{traag2011social}) kvantitatívan összevetni.
+    \item \textbf{Szakirodalmi megalapozás.} A CDR-feldolgozás bevett megoldásai és a mobilitási metrikák (\textit{Radius of Gyration}, entrópia, \textit{trajectory}) számítása.
+    \item \textbf{Adatkészlet bemutatása.} Az YJMob100K szerkezete, a baseline és a vészhelyzeti részkészletek viszonya, POI-fájlok.
+    \item \textbf{Rendszerterv.} 16~GB~RAM-os egygépes környezetben is hatékony architektúra 141~M rekordhoz.
+    \item \textbf{ETL-pipeline.} Adatbetöltéstől a felhasználónkénti, naponkénti metrikák számításáig, csillagsémás tárolással.
+    \item \textbf{Anomáliadetekció.} Felügyelet nélküli azonosítás, baseline-visszaösszevetéssel.
+    \item \textbf{GIS-megjelenítés.} Rácskoordináták georeferálása és OSM-alapú megjelenítés.
+    \item \textbf{Két pilléres kiértékelés.} \textbf{(A)} egyéni városhasználat (K-Means archetípusok, POI-affinitás, helyszín-azonosított rendezvények) és \textbf{(B)} kollektív vészhelyzeti viselkedés (Isolation Forest paradoxon, ,,ébredő város'', esemény-elnémulás) -- a CDR-szakirodalom (González \cite{gonzalez2008understanding}, Pintér--Felde \cite{pinter2021evaluating, pinter2022awakening}, Traag et al.\ \cite{traag2011social}) megfigyeléseivel kvantitatívan összevetve.
 \end{enumerate}
 
 \subsection{A dolgozat felépítése}
 \label{subsec:structure}
 
-A dolgozat tíz fejezetből áll. A 2.\ fejezet a mobiltelefon-hálózatok cellás architektúráját és a CDR fogalmát ismerteti. A 3.\ fejezet a CDR-alapú humán mobilitáskutatás szakirodalmát foglalja össze, kitérve a smart~city alkalmazásokra és a kutatási célú CDR-adatkészletek általános szerkezetére. A 4.\ fejezet a mobilitási metrikák -- gyrációs sugár, entrópia, helydiverzitás, otthon/munkahely-detektálás, aktivitáskoncentráció, visszatérési ráta -- matematikai definícióit és számítási eljárásait tárgyalja.
-
-Az 5.\ fejezet a konkrét felhasznált adathalmazt, az YJMob100K-t mutatja be. A 6.\ fejezet a feldolgozó rendszer rendszertervét részletezi, beleértve a technológiaválasztást és a csillagsémát. A 7.\ fejezet a tényleges implementációt írja le SQL-kódminták kíséretében, a 8.\ fejezet pedig a georeferálási megoldást és az elkészült tematikus GIS-térképeket. A 9.\ fejezet a fenti két pillér (egyéni profilok / vészhelyzeti kollektív viselkedés) kvantitatív elemzéseit tartalmazza. Végül a 10.\ fejezet összefoglalja az eredményeket, és bemutatja a megvalósítás korlátait, valamint a jövőbeli fejlesztési irányokat. A POI-zóna leképezés és további kiegészítő anyagok a Függelékben találhatók.
+A 2--4.\ fejezet az elméleti hátteret adja: a CDR fogalma és a mobilhálózati architektúra (2), a CDR-alapú mobilitáskutatás és smart~city alkalmazások szakirodalmi áttekintése (3), valamint a mobilitási metrikák matematikai definíciói (4). Az 5.\ fejezet az YJMob100K adathalmazt mutatja be. A 6--8.\ fejezet a megvalósítást tárgyalja: rendszerterv és csillagséma (6), implementáció SQL-kódmintákkal (7), georeferálás és tematikus GIS-térképek (8). A 9.\ fejezet a két pillér (egyéni profilok / vészhelyzeti kollektív viselkedés) kvantitatív elemzéseit, a 10.\ fejezet az összefoglalást és a jövőbeli irányokat tartalmazza. A POI-zóna leképezés a Függelékben található.

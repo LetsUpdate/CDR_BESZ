@@ -4,29 +4,22 @@ A jelen fejezetben bemutatom a CDR adatfeldolgozó rendszer tervezési döntése
 
 \subsection{Tervezési szempontok és korlátok}
 
-A rendszerterv kialakítását három fő szempont határozta meg:
-\begin{enumerate}
-    \item \textbf{Adatméret:} A YJMob100K adathalom két fő CSV fájlja összesen mintegy 141~millió sort tartalmaz. Az adatbázis-motornak képesnek kell lennie ennyi rekord hatékony kezelésére anélkül, hogy a teljes adatot a memóriába kellene tölteni.
-    \item \textbf{Hardverkorlátok:} A fejlesztő gép 16~GB RAM-mal és 6 magos Intel i5-8400 processzorral rendelkezik. Elosztott cluster nem áll rendelkezésre, így a választott eszközöknek egyetlen gépen is hatékonynak kell lenniük.
-    \item \textbf{Reprodukálhatóság:} A teljes pipeline-nak szkriptelhetőnek, verziókezelhetőnek és parancssori futtatással újrafuttathatónak kell lennie, külső szerver vagy GUI nélkül.
-\end{enumerate}
+A rendszerterv három szempont mentén alakult: \textbf{adatméret} ($\approx$141~M sor, in-memory feldolgozás kizárva); \textbf{hardverkorlát} (16~GB RAM, 6~magos i5-8400, elosztott cluster nélkül); \textbf{reprodukálhatóság} (szkriptelt, verziókezelt, parancssorból futtatható pipeline).
 
 \subsection{Technológiai alternatívák értékelése}
 
 Az egyes rétegekhez a CDR-szakirodalom \cite{zhang2019connected, pinter2020artificial} alapján mérlegelt alternatívák és a választás indoklása:
 
 \begin{itemize}
-    \item \textbf{Adatbázis-motor:} A PostgreSQL/PostGIS sor-orientált tárolása a 141~M soros, GROUP~BY-intenzív OLAP lekérdezésekhez nem ideális, és külön szerverfolyamatot igényelne; az Apache Spark egyetlen gépen JVM-overhead miatt nem indokolt. A választott \textbf{DuckDB} beágyazott, oszlopos OLAP motor: streaming módban olvas CSV-t (a teljes adat soha nem kerül RAM-ba), vektorizált végrehajtása másodperces aggregációkat ad 16~GB RAM mellett, és a Python folyamatba integráltan közvetlenül pandas DataFrame-ekké alakítható az eredmény. SQL-alapú maradás biztosítja, hogy a lekérdezések más motoron (pl.~PostgreSQL) is futtathatók legyenek.
-    \item \textbf{Programozási nyelv:} Az R GIS-támogatása kevésbé kiforrott, az SSIS zárt forráskódú; a \textbf{Python} egységes ökoszisztémát kínál ETL-hez, gépi tanuláshoz és vizualizációhoz. Az ETL-logika modulárisan szervezett szkriptekbe kerül, köztes eredményekkel Parquet formátumban.
-    \item \textbf{GIS:} A QGIS asztali alkalmazás munkafolyamata nehezen szkriptelhető, a PostGIS külön szervert igényel. A választott \textbf{GeoPandas + pyproj + contextily} kombináció Python-kódból végzi a koordináta-transzformációt (EPSG:2449~$\rightarrow$~WGS84), a GeoDataFrame-kezelést és az OpenStreetMap csemperéteget, így teljes a reprodukálhatóság.
-    \item \textbf{Anomáliadetekció és vizualizáció:} A \textbf{scikit-learn Isolation Forest} felügyelet nélküli, jól skálázódó és a Python-stackbe illeszkedik; a nyomtatott minőségű ábrákhoz interaktív (Plotly, Folium) helyett a \textbf{matplotlib + seaborn} kombinációt választottam, ami pontosan illeszkedik a dolgozat ábrázolási céljához.
+    \item \textbf{Adatbázis-motor:} PostgreSQL/PostGIS sor-orientált tárolása OLAP-ra szuboptimális, Spark egy gépen JVM-overhead. A \textbf{DuckDB} beágyazott, oszlopos motor: CSV-t streaming módban olvas, vektorizált aggregációja másodperces 16~GB-on, és pandas-DataFrame-ekké konvertál.
+    \item \textbf{Programozási nyelv:} R GIS kevésbé kiforrott, SSIS zárt; a \textbf{Python} egységes ökoszisztémát ad ETL-hez, ML-hez és vizualizációhoz, Parquet köztes eredményekkel.
+    \item \textbf{GIS:} QGIS nehezen szkriptelhető, PostGIS szervert igényel. \textbf{GeoPandas + pyproj + contextily}: kódból EPSG:2449~$\rightarrow$~WGS84 transzformáció és OSM-csempe.
+    \item \textbf{Anomáliadetekció és vizualizáció:} \textbf{scikit-learn Isolation Forest} (felügyelet nélküli, skálázódó); \textbf{matplotlib + seaborn} a nyomtatott minőségű ábrákhoz.
 \end{itemize}
-
-A választott eszközöket összefoglaló \autoref{tab:tech_stack} a következő alfejezetben található.
 
 \subsection{A választott technológiai stack összefoglalása}
 
-Az alábbi táblázat foglalja össze az egyes rétegek kiválasztott eszközeit:
+A \autoref{tab:tech_stack} foglalja össze az egyes rétegek kiválasztott eszközeit:
 
 \begin{table}[H]
 \centering
@@ -52,17 +45,7 @@ Köztes formátum & Parquet           & Oszlopos export/mentés \\
 
 \subsection{Magasszintű architektúra}
 
-A rendszer négy fő rétegből áll (\autoref{fig:arch}):
-
-\begin{enumerate}
-    \item \textbf{Adatforrás réteg.} A nyers CSV fájlok (YJMob100K dataset1, dataset2) és a kiegészítő adatok (POI kategóriák). Ezeket a DuckDB \texttt{read\_csv} streaming olvasója dolgozza fel, tehát a teljes CSV soha nem kerül egyben a memóriába.
-
-    \item \textbf{Perzisztens tároló (DuckDB).} A betöltött adatok DuckDB táblákba kerülnek, amelyek oszlopos formátumban,  tömörítve tárolódnak a (\texttt{mobility.duckdb}) fájlban. Ez egyben a Data Warehouse szerepet is betölti, mivel a dimenziós táblákat is itt hozom létre.
-
-    \item \textbf{Analitikai réteg.} A mobilitási metrikákat SQL CTE-láncokon (Common Table Expression) keresztül számítom ki a DuckDB-ben, majd az eredményeket Parquet fájlokba is exportálom. Az anomáliadetekciót a scikit-learn végzi Python-ban, a DuckDB-ből kiolvasott feature mátrixon.
-
-    \item \textbf{Megjelenítési réteg.} A származtatott mutatókat a GeoPandas georeferálja, a matplotlib + contextily pedig térképes és statisztikai ábrákon jeleníti meg.
-\end{enumerate}
+A rendszer négy fo rétegből áll (\autoref{fig:arch}): (1) \textbf{Adatforrás} -- a nyers CSV-k (YJMob100K, POI), amelyeket a DuckDB \texttt{read\_csv} streaming olvasója dolgoz fel; (2) \textbf{Perzisztens tároló} -- a DuckDB oszlopos, tömörített \texttt{mobility.duckdb} fájl, egyben a Data Warehouse és a dimenziós táblák otthona; (3) \textbf{Analitikai réteg} -- mobilitási metrikák SQL CTE-láncokból, Parquet-export és scikit-learn anomáliadetekció; (4) \textbf{Megjelenítési réteg} -- GeoPandas-georeferálás és matplotlib + contextily térképek.
 
 \begin{figure}[H]
 \centering
@@ -108,24 +91,13 @@ A rendszer négy fő rétegből áll (\autoref{fig:arch}):
 
 \subsection{Adatbázis-terv: csillagséma}
 
-Az adatbázis logikai modellje csillagsémára épül, amelyet a 3.\ fejezetben bemutatott általános CDR adatmodellből vezettem le, a YJMob100K sajátosságaihoz igazítva.
+Az adatbázis logikai modellje csillagsémára épül, amelyet a 3.\ fejezet általános CDR adatmodelljéből vezettem le, a YJMob100K sajátosságaihoz igazítva.
 
-A \textbf{ténytáblák} a nyers mobilitási rekordokat tartalmazzák:
-\begin{itemize}
-    \item \textbf{mobility1} -- a normál időszak 111{,}5~millió rekordja (100~000 felhasználó, 75 nap).
-    \item \textbf{mobility2} -- a vészhelyzeti időszak 29{,}4~millió rekordja (25\,000 felhasználó, 75 nap, ebből az utolsó 15 nap rendkívüli). A két adatkészlet független kohorsz, így a teljes felhasználószám $100\,000 + 25\,000 = 125\,000$ (a részleteket lásd az 5.3.\ szakaszban).
-\end{itemize}
+A \textbf{ténytáblák} a nyers mobilitási rekordokat tartalmazzák: \texttt{mobility1} -- a normál időszak 111{,}5~M rekordja (100~000 felhasználó, 75 nap), \texttt{mobility2} -- a vészhelyzeti időszak 29{,}4~M rekordja (25\,000 felhasználó, ebből az utolsó 15 nap rendkívüli). A két adatkészlet független kohorsz, így a teljes felhasználószám $100\,000 + 25\,000 = 125\,000$ (lásd 5.3.\ szakasz). Minden rekord öt mezőből áll: \texttt{uid}, \texttt{d}, \texttt{t}, \texttt{x}, \texttt{y}.
 
-\noindent Minden rekord öt mezőből áll: \texttt{uid} (előfizető), \texttt{d} (nap), \texttt{t} (30~perces időrés), \texttt{x} és \texttt{y} (rácskoordináták).
+A \textbf{dimenzió táblák}: \texttt{dim\_time} az időrések metaadatai (óra, napszak, hétköznap-jelző, vészhelyzeti jelölés d~$\geq$~60; 3\,600 sor), \texttt{dim\_cell} a rácscellák térbeli attribútumai (domináns POI-kategória, zóna; 20\,146 aktív cella a 40\,000-ből), \texttt{dim\_user} felhasználói összefoglaló dataset-azonosítóval, otthon-/munkahely-cellával és H--W-távolsággal (kompozit kulcs $(\texttt{uid}, \texttt{dataset})$, 121\,607 sor; archetípus-klaszter külön \texttt{user\_archetypes.csv}-ben).
 
-A \textbf{dimenzió táblák}:
-\begin{itemize}
-    \item \textbf{dim\_time} -- az időrések metaadatai: a \texttt{(d, t)} párból számított óra, napszak (éjszaka/reggel/délután/este), hét napja, hétköznap/hétvége jelző, valamint a vészhelyzeti időszak jelölése (d $\geq$ 60). Összesen 3\,600 sor ($75 \times 48$).
-    \item \textbf{dim\_cell} -- a rácscellákon számított térbeli attribútumok: domináns POI kategória, zónatípus (élelmiszer, bevásárlás, közlekedés stb.), összesített POI szám. Csak azok a cellák szerepelnek, amelyekben tényleges aktivitás volt (20\,146 sor a 40\,000-ből).
-    \item \textbf{dim\_user} -- felhasználói összefoglaló: az adatkészlet azonosítója, becsült otthon- és munkahely-cella, otthon--munkahely távolság. Természetes kulcs: \((\texttt{uid}, \texttt{dataset})\) kompozit kulcs, mivel a két adatkészlet független kohorsz (lásd 5.3.\ szakasz). 121\,607 sor (a 125\,000 felhasználóból ennyihez sikerült stabil otthoncellát hozzárendelni). A felhasználói archetípus-klaszterezés (lásd 9.6.\ szakasz) eredménye nem a dimenzió-táblában, hanem külön \texttt{output/user\_archetypes.csv} fájlban tárolódik, hogy az analitikai modellfuttatások függetlenek maradjanak az adatraktártól.
-\end{itemize}
-
-\noindent A származtatott mobilitási metrikákat két aggregált tábla \texttt{user\_daily\_features1}, illetve \texttt{user\_daily\_features2} tárolja, amelyeket a 4.\ fejezetben bemutatott képletek alapján SQL-ben számítok ki. Ezek felhasználónként és naponként tartalmazzák a gyrációs sugarat, a Shannon-entrópiát, a lokációs diverzitást, a becsült otthon- és munkahely-cellát, valamint az otthon--munkahely távolságot méterben.
+A származtatott metrikákat \texttt{user\_daily\_features1/2} aggregált táblák tartalmazzák felhasználónként és naponként (gyrációs sugár, Shannon-entrópia, helydiverzitás, otthon-/munkahely-cella, H--W távolság méterben).
 
 \subsection{Feldolgozási folyamat (pipeline)}
 
@@ -153,9 +125,4 @@ Az YJMob100K 200$\times$200-as rácsa önmagában nem hordoz földrajzi informá
 
 \subsection{Kockázatok és korlátok}
 
-A rendszerterv megvalósítása során a következő korlátokkal számoltam:
-\begin{itemize}
-    \item \textbf{Térbeli pontosság:} A rács cellamérete (${\sim}455 \times 556$~m) durvábbá teszi a pozíciómeghatározást, mint egy valódi bázisállomás-hálózat városi részén. A metrikák így a rácsszintű felbontásra vonatkoznak \cite{gonzalez2008understanding}.
-    \item \textbf{Georeferálás bizonytalansága:} A rácsparamétereket inverz mérnöki módszerrel határoztam meg; az origó pontos helye néhány száz méteres bizonytalansággal terhelt.
-    \item \textbf{Anomáliadetekció validálása:} Felügyelet nélküli módszert alkalmazok (Isolation Forest), amelynek kiértékelése címkézett ground truth adat hiányában korlátozott. Az eredményeket a vészhelyzeti időszak ismert kontextusa alapján értékelem.
-\end{itemize}
+\textbf{Térbeli pontosság:} a rács cellamérete (${\sim}455 \times 556$~m) durvább a valódi bázisállomás-hálózatnál \cite{gonzalez2008understanding}. \textbf{Georeferálás:} az inverz mérnöki módon meghatározott origó néhány száz méteres bizonytalansággal terhelt. \textbf{Anomáliadetekció:} felügyelet nélküli Isolation Forest, címkézett ground truth nélkül; a vészhelyzeti kontextus alapján értelmezem.

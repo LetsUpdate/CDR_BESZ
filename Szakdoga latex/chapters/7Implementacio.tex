@@ -1,10 +1,10 @@
 % !TEX root = ../main.tex
 
-A jelen fejezetben a 6.\ fejezetben megtervezett rendszer tényleges megvalósítását mutatom be. A pipeline négy egymásra épülő Python szkriptből áll; mindegyik egy jól körülhatárolt fázist valósít meg, és a projekt gyökérkönyvtárából futtatható.
+A jelen fejezet a 6.\ fejezetben megtervezett rendszer megvalósítását mutatja be. A pipeline négy egymásra épülő Python szkriptből áll.
 
 \subsection{Az adatbetöltési fázis}
 
-Az \texttt{ingest.py} felelős a nyers CSV fájlok DuckDB adatbázisba töltéséért. Az adatbázis-kapcsolat létrehozásakor a DuckDB szálkezelését az elérhető 6~processzormaghoz, memóriahasználatát --- pedig 10~GB-os limithez igazítom (\texttt{SET threads TO 6}, \texttt{SET memory\_limit = '10GB'}). A CSV fájlok betöltése a DuckDB beépített \texttt{read\_csv} függvényével történik, streaming módban: a teljes fájl soha nem kerül egyszerre a memóriába. Az oszlopok explicit típusmegjelölést kapnak (pl.\ \texttt{UINTEGER}, \texttt{UTINYINT}, \texttt{USMALLINT}), ezzel minimalizálva a memóriahasználatot az automatikus típusbecsléshez képest:
+Az \texttt{ingest.py} a nyers CSV-k DuckDB-be töltéséért felel. A kapcsolatot 6 szálra és 10~GB memórialimitre állítom (\texttt{SET threads TO 6}, \texttt{SET memory\_limit = '10GB'}). A CSV-ket a DuckDB \texttt{read\_csv} függvénye streaming módban olvassa, explicit oszloptipusokkal (\texttt{UINTEGER}, \texttt{UTINYINT}, \texttt{USMALLINT}) a memóriahasználat minimalizálására:
 
 \begin{lstlisting}[language=SQL, caption={A \texttt{mobility1} tábla létrehozása streaming CSV-olvasással.}, label={lst:mobility_load}, basicstyle=\small\ttfamily, breaklines=true, frame=single]
 CREATE TABLE mobility1 AS
@@ -41,7 +41,7 @@ A betöltés végén sorszám-validáció ellenőrzi, hogy az elvárt sorok mind
 
 \subsection{Mobilitási metrikák számítása}
 
-A \texttt{features.py} kétfázisú köztes-tábla stratégiát alkalmaz a memóriabiztonság érdekében. Először két kis staging tábla készül: \texttt{\_cell\_counts} (uid, d, x, y, cnt) és \texttt{\_slot\_counts} (uid, d, t, cnt), amelyek a 111~M soros forrást kb.\ 16-szorosára tömörítik. Minden egyes metrika ezekből, önálló \texttt{CREATE TABLE AS} lépésben kerül kiszámításra, a záró \texttt{SELECT} pedig nyolc kis köztes táblát kapcsol össze szemben az egyetlen CTE-láncolattal, amely nagy adathalmazon memória-túllépést okozna.
+A \texttt{features.py} kétfázisú köztes-tábla stratégiát alkalmaz: először két kis staging tábla épül (\texttt{\_cell\_counts}, \texttt{\_slot\_counts}), amelyek a 111~M soros forrást kb.\ 16-szorosára tömörítik. Minden metrika külön \texttt{CREATE TABLE AS}-szel számítódik, a záró \texttt{SELECT} ezeket kapcsolja össze -- egyetlen nagy CTE-lánc helyett, ami nagy adathalmazon memória-túllépést okozna.
 
 Az összes kiszámított metrikát az \autoref{tab:features_metrics} foglalja össze.
 
@@ -68,7 +68,7 @@ Az összes kiszámított metrikát az \autoref{tab:features_metrics} foglalja ö
 \end{tabular}
 \end{table}
 
-A gyrációs sugár az egyszerű átlag helyett ping-súlyozott változatot alkalmaz, anizotrop cellaméretekkel (easting $\approx 454{,}5$~m, northing $\approx 555{,}6$~m); mindkét korrekcióra szükség van a szisztematikus torzítás elkerüléséhez:
+A gyrációs sugár ping-súlyozott változatban, anizotrop cellaméretekkel (easting $\approx 454{,}5$~m, northing $\approx 555{,}6$~m) számítódik:
 
 \begin{lstlisting}[language=SQL, caption={A gyrációs sugár SQL-implementációja: ping-súlyozott, anizotrop cellaméretekkel.}, label={lst:rog}, basicstyle=\small\ttfamily, breaklines=true, frame=single]
 SQRT(SUM(cnt * (
@@ -77,10 +77,10 @@ SQRT(SUM(cnt * (
 )) / SUM(cnt)) AS radius_of_gyration
 \end{lstlisting}
 
-A \texttt{return\_rate} kiszámítása \texttt{LAG()} ablakfüggvénnyel egyetlen menetben fut a staging táblán, elkerülve a memóriaigényes önillesztést. A home- és work-cella detekció \texttt{ROW\_NUMBER()} ablakfüggvénnyel valósul meg; holtverseny esetén a kisebb $(x, y)$ koordinátájú cella kap elsőbbséget.
+A \texttt{return\_rate} egyetlen \texttt{LAG()} ablakfüggvénnyel fut a staging táblán, elkerülve a memóriaigényes önillesztést. A home- és work-cella detekció \texttt{ROW\_NUMBER()} ablakfüggvénnyel; holtverseny esetén a kisebb $(x, y)$ koordinátájú cella nyer.
 \subsection{A csillagséma kialakítása}
 
-A \texttt{schema.py} a 6.\ fejezetben tervezett három dimenzió-táblát materializálja az adatbázisban. A \textbf{dim\_time} (3\,600~sor) a 75~nap × 48~időrés minden kombinációjához tartalmaz metaadatot (óra, napszak, \texttt{dow}, \texttt{is\_weekday}, \texttt{period\_label}); a $d = 0$ napot vasárnaphoz rendeltem az aktivitásmintázat heti periodicitása alapján. A \textbf{dim\_cell} (20\,146~sor) az aktív rácscellákat tartalmazza domináns POI-kategóriával és 9-zónás összevont besorolással (élelmezés, kereskedelem, szabadidő, közlekedés, parkolás, egészségügy, oktatás, szolgáltatás, ipar). A \textbf{dim\_user} (121\,607~sor) minden \texttt{(uid, dataset)} kombinációhoz egy sort tárol a detektált otthon- és munkahely-cellával; a 125\,000 felhasználóból $\approx 3\,400$-hoz nincs stabil otthon-detekció elegendő éjszakai ping hiányában.
+A \texttt{schema.py} a 6.\ fejezetben tervezett három dimenzió-táblát materializálja: \textbf{dim\_time} (3\,600~sor) a 75~nap × 48~időrés minden kombinációjához tartalmaz metaadatot (óra, napszak, \texttt{dow}, \texttt{is\_weekday}, \texttt{period\_label}); $d=0$ vasárnap. \textbf{dim\_cell} (20\,146~sor) az aktív rácscellákat tartalmazza domináns POI-kategóriával és 9-zónás összevont besorolással. \textbf{dim\_user} (121\,607~sor) minden \texttt{(uid, dataset)} kombinációhoz egy sort ír le; $\approx 3\,400$ felhasználóhoz nincs stabil otthon-detekció.
 
 \subsection{Anomáliadetekció}
 

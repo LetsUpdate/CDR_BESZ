@@ -1,20 +1,16 @@
 % !TEX root = ../main.tex
 
-A jelen fejezet az YJMob100K adathalmaz rácskoordinátáinak georeferálását és térképes megjelenítését mutatja be. A vizualizáció OpenStreetMap alaptérképre vetítve, pyproj-alapú koordináta-transzformációval készült.
+A jelen fejezet az YJMob100K rácskoordinátáinak georeferálását és OpenStreetMap-alapú térképes megjelenítését mutatja be.
 
 \subsection{Georeferálási módszertan}
 
-Az YJMob100K adathalmaz nem hozza nyilvánosságra a mérési helyszínt; az adatrekordok koordinátái 1--200 közötti rácsindexek, nem geodéziai koordináták. A rács valós térbeli elhelyezkedéséhez a \textit{reverse-engineering-YJMob100K-grid} projekt \cite{pinter2024revealing} eredményeit alkalmaztam, amely sablonillesztéssel azonosította a megfigyelési területet Nagoya városával (Aichi prefektúra, Japán).
+Az YJMob100K nem hozza nyilvánosságra a mérési helyszínt; az adatrekordok 1--200 közötti rácsindexek. A rács valós elhelyezkedéséhez a \textit{reverse-engineering-YJMob100K-grid} projekt \cite{pinter2024revealing} eredményeit alkalmaztam, amely sablonillesztéssel azonosította a területet Nagoyával (Aichi prefektúra, Japán).
 
-A meghatározott koordináta-rendszer az EPSG:2449 (Japan Plane Rectangular CS~VII), amelynek origója 36°~északi szélesség és 137°~35'~keleti hosszúság. Az adatkészletben az $x$ tengelyindex az észak--déli (\textit{northing}), az $y$ index a kelet--nyugati (\textit{easting}) irányba növekszik (lásd 5.~fejezet).
-
-Ellentétben a névleges 500~m-es rácsmérethivatkozással, a cellák nem négyzetesek: az easting irányú méret $5000 / 11 \approx 454{,}5$~m, a northing irányú méret $5000 / 9 \approx 555{,}6$~m. Az 5.\ fejezetben jelzett aszimmetria elkerülésére a \texttt{features.py} mindkét értéket explicit módon alkalmazza (ld.\ 7.\ fejezet).
-
-A rács sarokpontja (az $(1, 1)$ cella bal alsó sarka) EPSG:2449-ben: easting $= {-60\,682}$~m, northing $= {-166\,667}$~m. Az ebből levezetett teljes kiterjedés: $\approx 91$~km (kelet--nyugat) × $\approx 111$~km (észak--dél).
+A koordináta-rendszer az EPSG:2449 (Japan Plane Rectangular CS~VII), origója 36$^\circ$~északi szélesség és 137$^\circ$~35'~keleti hosszúság. Az $x$ index az észak--déli (\textit{northing}), az $y$ a kelet--nyugati (\textit{easting}) irányba növekszik. A cellák nem négyzetesek: easting $\approx 454{,}5$~m, northing $\approx 555{,}6$~m. A rács $(1, 1)$ cellájának bal alsó sarka EPSG:2449-ben: easting $= {-60\,682}$~m, northing $= {-166\,667}$~m; teljes kiterjedés $\approx 91 \times 111$~km.
 
 \subsection{Megvalósítás}
 
-A georeferálást a \texttt{geo.py} modul végzi. A pyproj könyvtár \texttt{Transformer} osztálya egyszer inicializálja az EPSG:2449 $\rightarrow$ WGS84 transzformációt, amelyet ezután vektorizáltan alkalmazom a teljes rácsra:
+A georeferálást a \texttt{geo.py} végzi: a pyproj \texttt{Transformer} osztálya inicializálja az EPSG:2449 $\rightarrow$ WGS84 transzformációt, amelyet vektorizáltan alkalmazok a teljes rácsra:
 
 \begin{lstlisting}[language=Python, caption={Cellaindex WGS84-koordinátává alakítása.}, label={lst:geotransform}, basicstyle=\small\ttfamily, breaklines=true, frame=single]
 from pyproj import Transformer
@@ -27,7 +23,7 @@ def grid_to_lonlat(x, y):
     return _to_wgs84.transform(easting, northing)
 \end{lstlisting}
 
-A \texttt{make\_polygon\_gdf} függvény az összes rácscella poligonját Shapely \texttt{box} objektumként állítja elő, amelyeket GeoPandas GeoDataFrame-be gyűjt. Az alaptérkép megjelenítéséhez szükséges Web Mercator (EPSG:3857) vetületre a \texttt{.to\_crs()} metódus végzi az átváltást, a contextily könyvtár pedig a megfelelő OpenStreetMap csemperéteget tölti le és illeszti a kivetítési körzethez.
+A \texttt{make\_polygon\_gdf} függvény az összes rácscella poligonját Shapely \texttt{box}-oként állítja elő GeoDataFrame-be. Az alaptérkép megjelenítéséhez a \texttt{.to\_crs()} átvált EPSG:3857-re, a contextily pedig az OpenStreetMap csemperéteget illeszti.
 
 \subsection{Térképes vizualizációk}
 

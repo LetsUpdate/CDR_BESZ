@@ -75,22 +75,14 @@ jellegű \cite{gonzalez2008understanding}.
 \subsection{Kiegészítő napi metrikák}
 \label{subsec:extra_metrics}
 
-A gyrációs sugár, az entrópia és a helydiverzitás mellett a CDR-szakirodalomban gyakran használt további napi metrikák, amelyeket a megvalósított rendszer (7.\ fejezet) szintén kiszámít:
+A gyrációs sugár, az entrópia és a helydiverzitás mellett a megvalósított rendszer (7.\ fejezet) további napi metrikákat is számít:
 
 \begin{itemize}
-	\item \textbf{Aktivitáskoncentráció (AC).} A felhasználó napi pingjeinek hányadrésze esik a top~$k$ leglátogatottabb cellára:
-		\[
-		\mathrm{AC}_k = \frac{\sum_{j \in \mathrm{top}_k} n_j}{\sum_j n_j}, \qquad k = 3.
-		\]
-		Magas $\mathrm{AC}$ erősen koncentrált térhasználatot jelez. A korlátozó intézkedések (lockdown, vészhelyzet) tipikusan növelik az értékét \cite{pinter2022awakening}.
+	\item \textbf{Aktivitáskoncentráció (AC).} Top~$k$ leglatogatottabb cellára eső ping-hányad: $\mathrm{AC}_k = \sum_{j \in \mathrm{top}_k} n_j / \sum_j n_j$ ($k=3$). Magas érték erősen koncentrált térhasználat \cite{pinter2022awakening}.
 
-	\item \textbf{Visszatérési ráta (RR).} Az adott napon érintett cellák hányadrésze, amelyek az előző napon is érintettek voltak:
-		\[
-		\mathrm{RR}(d) = \frac{|C_d \cap C_{d-1}|}{|C_d|}, \qquad C_d = \{(x,y) \text{ cellák a } d \text{ napon}\}.
-		\]
-		Magas $\mathrm{RR}$ erős napi rutint, kiszámítható mozgást jelent. A González-féle visszatérő mozgásmodellel \cite{gonzalez2008understanding} áll rokonságban.
+\item \textbf{Visszatérési ráta (RR).} Az aznap érintett cellák hányada, melyek előző nap is érintettek voltak: $\mathrm{RR}(d) = |C_d \cap C_{d-1}| / |C_d|$. Magas érték napi rutint jelez \cite{gonzalez2008understanding}.
 
-	\item \textbf{Csúcsidőrés (peak slot).} Az a 30~perces időrés ($t \in \{0,\dots,47\}$), amelyikben a felhasználó napi pingszáma maximális. A reggeli/esti ingázási csúcs \cite{pinter2022awakening} egyéni szintű proxyja.
+\item \textbf{Csúcsidőrés (peak slot).} Az a 30~perces időrés, amelyikben a felhasználó napi pingszáma maximális~-- a reggeli/esti ingázási csúcs egyéni proxyja \cite{pinter2022awakening}.
 
-	\item \textbf{Hétvége-jelző (weekend flag).} Bináris jelölő: $d \bmod 7 \in \{0, 6\}$ esetén hétvége. A hét napjainak sorrendjét empirikusan kell megállapítani, mert a YJMob100K nem hozza nyilvánosságra a kezdő dátumot (a levezetést a 9.\ fejezet validálja).
+\item \textbf{Hétvége-jelző.} $d \bmod 7 \in \{0, 6\}$. A hetinapok sorrendjét empirikusan kell megállapítani (lásd 9.\ fejezet).
 \end{itemize}
