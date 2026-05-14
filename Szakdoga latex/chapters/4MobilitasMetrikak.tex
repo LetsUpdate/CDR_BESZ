@@ -10,14 +10,14 @@ rendelik. Emellett számolnak azzal is, hogy a cellaváltások egy része puszt�
 \textbf{handover folyamat}, és nem feltétlenül valódi helyváltoztatás
 \cite{pinter2022awakening}.
 
-\subsection{Radius of Gyration (gyrációs sugár)}
+\subsection{Radius of Gyration (mozgástér sugara)}
 
-A gyrációs sugár ($r_{g}$) az egyéni mobilitás hatótávolságának alapvető mérőszáma,
+A mozgástér sugara ($r_{g}$) az egyéni mobilitás hatótávolságának alapvető mérőszáma,
 amely a meglátogatott helyek tömegközépponttól való átlagos négyzetes távolságát
 fejezi ki \cite{pinter2021evaluating}. Jelölje $N$ a vizsgált időszakban rögzített
 események számát, $\vec{r}_{i}$ az $i$-edik esemény helyszínének koordinátáit, $\vec
 {r}_{\mathrm{cm}}= \frac{1}{N}\sum_{i=1}^{N}\vec{r}_{i}$ pedig a trajektória tömegközéppontját.
-Ekkor a gyrációs sugár definíciója:
+Ekkor a mozgástér sugara definíciója:
 
 \begin{equation}
 	r_{g} = \sqrt{\frac{1}{N}\sum_{i=1}^{N}\|\vec{r}_{i} - \vec{r}_{\mathrm{cm}}\|^{2}}
@@ -29,7 +29,7 @@ Ekkor a gyrációs sugár definíciója:
     \includegraphics[width=0.6\textwidth]{img/radius_of_gyration.png}
     
     % Rövid cím (ábrajegyzékbe):
-    \caption[A gyrációs sugár (Radius of Gyration) szemléltetése]{A gyrációs sugár ($r_g$) szemléltetése. \\ \footnotesize\textit{Forrás: AI generált kép}}
+	\caption[A mozgástér sugara (Radius of Gyration) szemléltetése]{A mozgástér sugara ($r_g$) szemléltetése. \\ \footnotesize\textit{Forrás: AI generált kép}}
     
     % Hivatkozási címke:
     \label{fig:radius_gyration}
@@ -75,7 +75,7 @@ jellegű \cite{gonzalez2008understanding}.
 \subsection{Kiegészítő napi metrikák}
 \label{subsec:extra_metrics}
 
-A gyrációs sugár, az entrópia és a helydiverzitás mellett a megvalósított rendszer (7.\ fejezet) további napi metrikákat is számít:
+A mozgástér sugara, az entrópia és a helydiverzitás mellett a megvalósított rendszer (7.\ fejezet) további napi metrikákat is számít:
 
 \begin{itemize}
 	\item \textbf{Aktivitáskoncentráció (AC).} Top~$k$ leglatogatottabb cellára eső ping-hányad: $\mathrm{AC}_k = \sum_{j \in \mathrm{top}_k} n_j / \sum_j n_j$ ($k=3$). Magas érték erősen koncentrált térhasználat \cite{pinter2022awakening}.

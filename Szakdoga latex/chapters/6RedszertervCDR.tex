@@ -97,7 +97,7 @@ A \textbf{ténytáblák} a nyers mobilitási rekordokat tartalmazzák: \texttt{m
 
 A \textbf{dimenzió táblák}: \texttt{dim\_time} az időrések metaadatai (óra, napszak, hétköznap-jelző, vészhelyzeti jelölés d~$\geq$~60; 3\,600 sor), \texttt{dim\_cell} a rácscellák térbeli attribútumai (domináns POI-kategória, zóna; 20\,146 aktív cella a 40\,000-ből), \texttt{dim\_user} felhasználói összefoglaló dataset-azonosítóval, otthon-/munkahely-cellával és H--W-távolsággal (kompozit kulcs $(\texttt{uid}, \texttt{dataset})$, 121\,607 sor; archetípus-klaszter külön \texttt{user\_archetypes.csv}-ben).
 
-A származtatott metrikákat \texttt{user\_daily\_features1/2} aggregált táblák tartalmazzák felhasználónként és naponként (gyrációs sugár, Shannon-entrópia, helydiverzitás, otthon-/munkahely-cella, H--W távolság méterben).
+A származtatott metrikákat \texttt{user\_daily\_features1/2} aggregált táblák tartalmazzák felhasználónként és naponként (mozgástér sugara, Shannon-entrópia, helydiverzitás, otthon-/munkahely-cella, H--W távolság méterben).
 
 \subsection{Feldolgozási folyamat (pipeline)}
 

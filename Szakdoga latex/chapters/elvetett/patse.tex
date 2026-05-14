@@ -9,7 +9,7 @@ A CDR állományokkal mindig hatalmas adatmennyiséget kapunk, néha százmilli�
 
 3. \textbf{Tartós tárolás (Data Warehouse / Historikus tároló):} A tisztított adatokat historikus adatbázisba vagy elosztott fájlrendszerbe töltjük. Ha igazán nagy léptékű CDR-adatokat kezelünk, sokszor Hadoop HDFS rendszert használunk \cite{zhang2019connected}.
 
-4. \textbf{Analitikai réteg és metrikaszámítás:} A feldolgozott adatokból aggregált statisztikákat és mobilitási mutatókat számolunk (például gyrációs sugár, entrópia, home–work távolság) \cite{pinter2020artificial, pinter2021evaluating}. A skálázhatóság miatt a modern rendszerek gyakran Spark keretrendszert alkalmaznak, hogy párhuzamosan dolgozhassanak \cite{zhang2019connected}.
+4. \textbf{Analitikai réteg és metrikaszámítás:} A feldolgozott adatokból aggregált statisztikákat és mobilitási mutatókat számolunk (például mozgástér sugara, entrópia, home–work távolság) \cite{pinter2020artificial, pinter2021evaluating}. A skálázhatóság miatt a modern rendszerek gyakran Spark keretrendszert alkalmaznak, hogy párhuzamosan dolgozhassanak \cite{zhang2019connected}.
 
 5. \textbf{Adatkiadás és vizualizáció:} Végül a számított mutatókat térben is megjelenítjük például Voronoi-poligonokat vagy hőtérképeket használunk az elemzéshez \cite{pinter2021evaluating, xavier2012analyzing}.
 \begin{figure}[htbp]

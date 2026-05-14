@@ -5,7 +5,7 @@ A fejezet két kérdés köré szerveződik: \textbf{(A)} hogyan jellemzi a CDR-
 \subsection{Mobilitási metrikák eloszlása és a heti ciklus}
 \label{subsec:eloszlasok}
 
-A \autoref{fig:impl01} a négy fo metrika eloszlását mutatja a dataset1-en: a gyrációs sugár és a home--work távolság erősen jobbra aszimmetrikus, összhangban a González et al.\ \cite{gonzalez2008understanding} által leírt vágott hatványfüggvény-modellel.
+A \autoref{fig:impl01} a négy fo metrika eloszlását mutatja a dataset1-en: a mozgástér sugara és a home--work távolság erősen jobbra aszimmetrikus, összhangban a González et al.\ \cite{gonzalez2008understanding} által leírt vágott hatványfüggvény-modellel.
 
 \begin{figure}[H]
 \centering
@@ -22,7 +22,7 @@ A \autoref{fig:impl01} a négy fo metrika eloszlását mutatja a dataset1-en: a 
 \hline
 \textbf{Jellemző} & \textbf{Medián} & \textbf{Átlag} \\
 \hline
-Gyrációs sugár (m)           & 3~435  & 5~491  \\
+Mozgástér sugara (m)         & 3~435  & 5~491  \\
 Home--work távolság (m)      & 3~589  & 8~645  \\
 Helydiverzitás (cella/nap)   & 8      & 8{,}84 \\
 Shannon-entrópia (bit)       & --     & 2{,}66 \\
@@ -39,12 +39,12 @@ A pillér az egyén mobilitási ujjlenyomatát három egymást megerősítő biz
 
 \subsubsection*{K-Means archetípusok}
 
-A Pintér \cite{pinter2020artificial} disszertációjában leírt archetípusokat reprodukálva mind a 100~000 dataset1-beli felhasználóra K-Means-t ($k=4$, \texttt{random\_state}=42) futtattam három log-transzformált, skálázott felhasználói átlagra (gyrációs sugár, Shannon-entrópia, otthon--munkahely távolság). A $k=4$ választást a Pintér-féle tipológiához való illeszkedés és a 0{,}33-as sziluett-szám ($n=20\,000$ minta) indokolja.
+A Pintér \cite{pinter2020artificial} disszertációjában leírt archetípusokat reprodukálva mind a 100~000 dataset1-beli felhasználóra K-Means-t ($k=4$, \texttt{random\_state}=42) futtattam három log-transzformált, skálázott felhasználói átlagra (mozgástér sugara, Shannon-entrópia, otthon--munkahely távolság). A $k=4$ választást a Pintér-féle tipológiához való illeszkedés és a 0{,}33-as sziluett-szám ($n=20\,000$ minta) indokolja.
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.7\textwidth]{img/seg_01_cluster_scatter.png}
-\caption{A négy klaszter elhelyezkedése a (gyrációs sugár, home--work távolság) síkon. Saját számítás.}
+\caption{A négy klaszter elhelyezkedése a (mozgástér sugara, home--work távolság) síkon. Saját számítás.}
 \label{fig:seg01}
 \end{figure}
 
@@ -138,7 +138,7 @@ A dataset2 napi anomáliarátája az alap-időszakban ($d<60$) stabilan 7{,}0\% 
 \hline
 \textbf{Jellemző} & \textbf{Anomális} & \textbf{Normális} & \textbf{Arány} \\
 \hline
-Gyrációs sugár (m)         & 6~117 & 3~387 & 1{,}81× \\
+Mozgástér sugara (m)       & 6~117 & 3~387 & 1{,}81× \\
 Home--work távolság (m)    & 7~896 & 2~818 & 2{,}80× \\
 Shannon-entrópia (bit)     & 2{,}90 & 2{,}64 & 1{,}10× \\
 Helydiverzitás (cella/nap) & 9     & 8     & 1{,}12× \\
@@ -149,11 +149,11 @@ Helydiverzitás (cella/nap) & 9     & 8     & 1{,}12× \\
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.7\textwidth]{img/impl_06_anomaly_feature_comparison.png}
-\caption{Anomális és normális felhasználók jellemzőinek összehasonlítása a vészhelyzeti időszakban ($d \geq 60$). A gyrációs sugár és a home--work távolság logaritmikus tengelyen. Saját számítás.}
+\caption{Anomális és normális felhasználók jellemzőinek összehasonlítása a vészhelyzeti időszakban ($d \geq 60$). A mozgástér sugara és a home--work távolság logaritmikus tengelyen. Saját számítás.}
 \label{fig:impl06}
 \end{figure}
 
-A home--work távolság közel háromszoros és a gyrációs sugár közel kétszeres mediáneltérése arra utal, hogy az anomális csoport tagjai a vészhelyzet alatt is lényegesen nagyobb területet jártak be -- vélhetően olyan egyének, akik nem tudtak otthon maradni. Összhangban Traag et al.\ \cite{traag2011social} azon megfigyelésével, hogy rendkívüli helyzetekben egy kisebb csoportnál a CDR-adatban is mérhető szélsőséges mobilitásnövekedés.
+A home--work távolság közel háromszoros és a mozgástér sugara közel kétszeres mediáneltérése arra utal, hogy az anomális csoport tagjai a vészhelyzet alatt is lényegesen nagyobb területet jártak be -- vélhetően olyan egyének, akik nem tudtak otthon maradni. Összhangban Traag et al.\ \cite{traag2011social} azon megfigyelésével, hogy rendkívüli helyzetekben egy kisebb csoportnál a CDR-adatban is mérhető szélsőséges mobilitásnövekedés.
 
 \subsubsection*{Az ,,ébredő város'' eltolódása}
 

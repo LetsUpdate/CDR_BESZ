@@ -68,9 +68,9 @@ Az összes kiszámított metrikát az \autoref{tab:features_metrics} foglalja ö
 \end{tabular}
 \end{table}
 
-A gyrációs sugár ping-súlyozott változatban, anizotrop cellaméretekkel (easting $\approx 454{,}5$~m, northing $\approx 555{,}6$~m) számítódik:
+A mozgástér sugara ping-súlyozott változatban, anizotrop cellaméretekkel (easting $\approx 454{,}5$~m, northing $\approx 555{,}6$~m) számítódik:
 
-\begin{lstlisting}[language=SQL, caption={A gyrációs sugár SQL-implementációja: ping-súlyozott, anizotrop cellaméretekkel.}, label={lst:rog}, basicstyle=\small\ttfamily, breaklines=true, frame=single]
+\begin{lstlisting}[language=SQL, caption={A mozgástér sugara SQL-implementációja: ping-súlyozott, anizotrop cellaméretekkel.}, label={lst:rog}, basicstyle=\small\ttfamily, breaklines=true, frame=single]
 SQRT(SUM(cnt * (
     POWER((x::DOUBLE - cx) * 555.556, 2) +
     POWER((y::DOUBLE - cy) * 454.545, 2)
